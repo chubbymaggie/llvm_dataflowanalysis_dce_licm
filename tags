@@ -1,0 +1,83 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+Annotator	IDFA.h	/^				Annotator<FlowType>(ValueMap<const BasicBlock *, idfaInfo *> &BI, ValueMap<const Instruction *, idfaInfo *> &II, std::vector<FlowType> &dm): BBtoInfo(BI), InstToInfo(II), domain(dm) {$/;"	f	class:__anon5::Annotator
+Annotator	IDFA.h	/^		class Annotator : public AssemblyAnnotationWriter {$/;"	c	namespace:__anon5
+BBtoInfo	IDFA.h	/^				ValueMap<const BasicBlock *, idfaInfo *> &BBtoInfo;		$/;"	m	class:__anon5::Annotator
+BinfoMap	IDFA.h	/^	typedef ValueMap<const BasicBlock *, idfaInfo *> BinfoMap;$/;"	t	namespace:__anon5
+CXXFLAGS	Makefile	/^CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -g -O0$/;"	m
+DCE	dce-pass.cpp	/^			DCE() : FunctionPass(ID) {}$/;"	f	class:__anon1::DCE
+DCE	dce-pass.cpp	/^	class DCE : public FunctionPass {$/;"	c	namespace:__anon1	file:
+DCEAnalysis	dceAnalysis.h	/^		DCEAnalysis() : IDFA<FlowType>() {}$/;"	f	class:__anon4::DCEAnalysis
+DCEAnalysis	dceAnalysis.h	/^	class DCEAnalysis: public IDFA<FlowType> {$/;"	c	namespace:__anon4
+ID	dce-pass.cpp	/^			static char ID;$/;"	m	class:__anon1::DCE	file:
+ID	dce-pass.cpp	/^	char DCE::ID = 0;$/;"	m	class:__anon1::DCE	file:
+ID	live.cpp	/^			static char ID;$/;"	m	class:__anon6::Liveness	file:
+ID	live.cpp	/^	char Liveness::ID = 0;$/;"	m	class:__anon6::Liveness	file:
+ID	reach.cpp	/^			static char ID;$/;"	m	class:__anon2::ReachDef	file:
+ID	reach.cpp	/^	char ReachDef::ID = 0;$/;"	m	class:__anon2::ReachDef	file:
+IDFA	IDFA.h	/^				IDFA() {}$/;"	f	class:__anon5::IDFA
+IDFA	IDFA.h	/^		class IDFA {$/;"	c	namespace:__anon5
+IinfoMap	IDFA.h	/^	typedef ValueMap<const Instruction *, idfaInfo *> IinfoMap;$/;"	t	namespace:__anon5
+InstToInfo	IDFA.h	/^				ValueMap<const Instruction *, idfaInfo *> &InstToInfo;$/;"	m	class:__anon5::Annotator
+LiveAnalysis	liveAnalysis.h	/^		LiveAnalysis() : IDFA<FlowType>() {}$/;"	f	class:__anon3::LiveAnalysis
+LiveAnalysis	liveAnalysis.h	/^	class LiveAnalysis: public IDFA<FlowType> {$/;"	c	namespace:__anon3
+Liveness	live.cpp	/^			Liveness() : FunctionPass(ID) {}$/;"	f	class:__anon6::Liveness
+Liveness	live.cpp	/^	class Liveness : public FunctionPass {$/;"	c	namespace:__anon6	file:
+ReachAnalysis	reachAnalysis.h	/^				ReachAnalysis() : IDFA<FlowType>() {}$/;"	f	class:__anon7::ReachAnalysis
+ReachAnalysis	reachAnalysis.h	/^		class ReachAnalysis : public IDFA<FlowType> {$/;"	c	namespace:__anon7
+ReachDef	reach.cpp	/^			ReachDef() : FunctionPass(ID) {}$/;"	f	class:__anon2::ReachDef
+ReachDef	reach.cpp	/^	class ReachDef : public FunctionPass {$/;"	c	namespace:__anon2	file:
+WorklistAlg	IDFA.h	/^	void IDFA<FlowType>::WorklistAlg(BinfoMap &BBtoInfo, IinfoMap &InstToInfo, ValueMap<FlowType, unsigned> &domainToIdx, bool isForward, Function &F) {$/;"	f	class:__anon5::IDFA
+analysis	IDFA.h	/^	void IDFA<FlowType>::analysis(std::vector<FlowType> domain, Function& F, bool isForward, BinfoMap &BBtoInfo, IinfoMap &InstToInfo) {$/;"	f	class:__anon5::IDFA
+domain	IDFA.h	/^				std::vector<FlowType> &domain;$/;"	m	class:__anon5::Annotator
+emitBasicBlockStartAnnot	IDFA.h	/^				virtual void emitBasicBlockStartAnnot(const BasicBlock *bb, formatted_raw_ostream &os) {$/;"	f	class:__anon5::Annotator
+emitInstructionAnnot	IDFA.h	/^				virtual void emitInstructionAnnot(const Instruction *i, formatted_raw_ostream &os) {$/;"	f	class:__anon5::Annotator
+gen	IDFA.h	/^			BitVector *gen;$/;"	m	class:__anon5::idfaInfo
+getAnalysisUsage	dce-pass.cpp	/^			virtual void getAnalysisUsage(AnalysisUsage &AU) const {$/;"	f	class:__anon1::DCE
+getAnalysisUsage	live.cpp	/^			virtual void getAnalysisUsage(AnalysisUsage &AU) const {$/;"	f	class:__anon6::Liveness
+getAnalysisUsage	reach.cpp	/^			virtual void getAnalysisUsage(AnalysisUsage &AU) const {$/;"	f	class:__anon2::ReachDef
+getBoundaryCondition	dceAnalysis.h	/^	BitVector* DCEAnalysis<FlowType>::getBoundaryCondition(int len, Function &F, ValueMap<Value *, unsigned> &domainToIdx) {$/;"	f	class:__anon4::DCEAnalysis
+getBoundaryCondition	liveAnalysis.h	/^	BitVector* LiveAnalysis<FlowType>::getBoundaryCondition(int len, Function &F, ValueMap<Value *, unsigned> &domainToIdx) {$/;"	f	class:__anon3::LiveAnalysis
+getBoundaryCondition	reachAnalysis.h	/^	BitVector* ReachAnalysis<FlowType>::getBoundaryCondition(int len, Function &F, ValueMap<Value *, unsigned> &domainToIdx) {$/;"	f	class:__anon7::ReachAnalysis
+idfaInfo	IDFA.h	/^			idfaInfo(unsigned len) {$/;"	f	class:__anon5::idfaInfo
+idfaInfo	IDFA.h	/^	class idfaInfo {$/;"	c	namespace:__anon5
+in	IDFA.h	/^			BitVector *in;$/;"	m	class:__anon5::idfaInfo
+initFlowValues	dceAnalysis.h	/^	BitVector* DCEAnalysis<FlowType>::initFlowValues(int len) {$/;"	f	class:__anon4::DCEAnalysis
+initFlowValues	liveAnalysis.h	/^	BitVector* LiveAnalysis<FlowType>::initFlowValues(int len) {$/;"	f	class:__anon3::LiveAnalysis
+initFlowValues	reachAnalysis.h	/^	BitVector* ReachAnalysis<FlowType>::initFlowValues(int len) {$/;"	f	class:__anon7::ReachAnalysis
+initGenKill	liveAnalysis.h	/^	void LiveAnalysis<FlowType>::initGenKill(BasicBlock *Bi, BasicBlock *Pi, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const BasicBlock *, idfaInfo *> &BBtoInfo) {$/;"	f	class:__anon3::LiveAnalysis
+initGenKill	reachAnalysis.h	/^	void ReachAnalysis<FlowType>::initGenKill(BasicBlock *Bi, BasicBlock *Pi, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const BasicBlock *, idfaInfo *> &BBtoInfo) {$/;"	f	class:__anon7::ReachAnalysis
+initInstGenKill	dceAnalysis.h	/^	void DCEAnalysis<FlowType>::initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {$/;"	f	class:__anon4::DCEAnalysis
+initInstGenKill	liveAnalysis.h	/^	void LiveAnalysis<FlowType>::initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {$/;"	f	class:__anon3::LiveAnalysis
+initInstGenKill	reachAnalysis.h	/^	void ReachAnalysis<FlowType>::initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {$/;"	f	class:__anon7::ReachAnalysis
+kill	IDFA.h	/^			BitVector *kill;$/;"	m	class:__anon5::idfaInfo
+meetOp	dceAnalysis.h	/^	void DCEAnalysis<FlowType>::meetOp(BitVector *op1, BitVector *op2) {$/;"	f	class:__anon4::DCEAnalysis
+meetOp	liveAnalysis.h	/^	void LiveAnalysis<FlowType>::meetOp(BitVector *op1, BitVector *op2) {$/;"	f	class:__anon3::LiveAnalysis
+meetOp	reachAnalysis.h	/^	void ReachAnalysis<FlowType>::meetOp(BitVector *op1, BitVector *op2) {$/;"	f	class:__anon7::ReachAnalysis
+out	IDFA.h	/^			BitVector *out;$/;"	m	class:__anon5::idfaInfo
+postorder	IDFA.h	/^	void IDFA<FlowType>::postorder(BinfoMap &BBtoInfo, IinfoMap &InstToInfo, std::vector<BasicBlock *> &Worklist, ValueMap<FlowType, unsigned> &domainToIdx) {$/;"	f	class:__anon5::IDFA
+postorderInst	IDFA.h	/^	void IDFA<FlowType>::postorderInst(BasicBlock *Bi, IinfoMap &InstToInfo, BinfoMap &BBtoInfo, ValueMap<FlowType, unsigned> &domainToIdx) {$/;"	f	class:__anon5::IDFA
+preorder	IDFA.h	/^	void IDFA<FlowType>::preorder(BinfoMap &BBtoInfo, IinfoMap &InstToInfo, std::vector<BasicBlock *> &Worklist, ValueMap<FlowType, unsigned> &domainToIdx) {$/;"	f	class:__anon5::IDFA
+preorderInst	IDFA.h	/^	void IDFA<FlowType>::preorderInst(Function &F, IinfoMap &InstToInfo, BinfoMap &BBtoInfo, ValueMap<FlowType, unsigned> &domainToIdx) {$/;"	f	class:__anon5::IDFA
+registerMyPass	dce-pass.cpp	/^	static void registerMyPass(const PassManagerBuilder &,$/;"	f	namespace:__anon1
+registerMyPass	live.cpp	/^	static void registerMyPass(const PassManagerBuilder &,$/;"	f	namespace:__anon6
+registerMyPass	reach.cpp	/^	static void registerMyPass(const PassManagerBuilder &,$/;"	f	namespace:__anon2
+runOnFunction	dce-pass.cpp	/^			virtual bool runOnFunction(Function &F) {$/;"	f	class:__anon1::DCE
+runOnFunction	live.cpp	/^			virtual bool runOnFunction(Function &F) {$/;"	f	class:__anon6::Liveness
+runOnFunction	reach.cpp	/^			virtual bool runOnFunction(Function &F) {$/;"	f	class:__anon2::ReachDef
+setBoundaryCondition	IDFA.h	/^	void IDFA<FlowType>::setBoundaryCondition(Function &F, BinfoMap &BBtoInfo, bool isForward, ValueMap<FlowType, unsigned> &domainToIdx) {$/;"	f	class:__anon5::IDFA
+setFlowValues	IDFA.h	/^	void IDFA<FlowType>::setFlowValues(Function &F, BinfoMap &BBtoInfo, bool isForward, int len) {$/;"	f	class:__anon5::IDFA
+sum	inputfile/loop2.c	/^int sum (int a, int b) {$/;"	f
+sum	inputfile/sum.c	/^int sum (int a, int b) {$/;"	f
+sum	inputfile/test1.c	/^int sum (int a, int b, int c) {$/;"	f
+sum	inputfile/test2.c	/^int sum (int a, int b, int c) {$/;"	f
+sum	test3.c	/^int sum (int a, int b, int c) {$/;"	f
+test	test01.c	/^void test() {$/;"	f
+test02	test02.c	/^void test02(int a) {$/;"	f
+transferFunc	dceAnalysis.h	/^	BitVector* DCEAnalysis<FlowType>::transferFunc(BitVector *input, BitVector *gen, BitVector *kill) {$/;"	f	class:__anon4::DCEAnalysis
+transferFunc	liveAnalysis.h	/^	BitVector* LiveAnalysis<FlowType>::transferFunc(BitVector *input, BitVector *gen, BitVector *kill) {$/;"	f	class:__anon3::LiveAnalysis
+transferFunc	reachAnalysis.h	/^	BitVector* ReachAnalysis<FlowType>::transferFunc(BitVector *input, BitVector *gen, BitVector *kill) {$/;"	f	class:__anon7::ReachAnalysis
