@@ -1,4 +1,3 @@
-#include <stdio.h>
 int cond3(int u, int v) {
 	int j;
 	int x = 1;

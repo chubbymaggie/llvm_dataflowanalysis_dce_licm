@@ -1,4 +1,5 @@
-int hc1() {
+int hc1(int a, int b) {
+	int x;
 	int M[100];
 	int i = 0, t = 0;
 	int N = 20;
@@ -8,4 +9,5 @@ int hc1() {
 		M[i] = t;
 	}
 	x = t;
+	return x;
 }
