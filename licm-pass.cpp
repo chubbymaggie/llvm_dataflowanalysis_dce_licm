@@ -45,11 +45,15 @@ namespace {
 			LoopInfo *LI;
 			DominatorTree *DT;
 			bool isChanged;
-			//LICM() : LoopPass(ID) {}
+			std::set<Value *> *LIset;
 			LICM() : LoopPass(ID) {
 				initializeLICMPass(*PassRegistry::getPassRegistry());
 			}
 
+			// get the domain
+			//1. reaching def....
+			//2. set....function to judge whether the instruction is LI or not.....
+			//3. pass all the 
 			virtual bool runOnLoop(Loop *L, LPPassManager &LPM) {
 				isChanged = false;
 				LI = &getAnalysis<LoopInfo>();
@@ -58,45 +62,134 @@ namespace {
 				myloop = L;
 				preheader = L->getLoopPreheader();
 
+				errs() << *preheader << "\n";
+				errs() << *(L->getHeader()) << "\n";
+				errs() << "Exit\n";
+				SmallVector<BasicBlock*, 8> ExitBlocks;
+				myloop->getExitBlocks(ExitBlocks);
+				for (unsigned i = 0, e = ExitBlocks.size(); i != e; ++i) {
+					errs() << *ExitBlocks[i] << "\n";
+				}
+
+
+
+				/*
 				if (preheader)
 					putAboveHandler(DT->getNode(L->getHeader()));
+				*/
+
+				errs() << "&&&&&&&&&&&&&&&&&&&&&&&&&&\n";
+				LIset = new std::set<Value *>(); 
+				bool setChanged = true;
+				while(setChanged) {
+					setChanged = false;
+					for (unsigned i = 0, e = L->getBlocks().size(); i != e; ++i) {
+						BasicBlock *BB = L->getBlocks()[i];
+
+						if (!myloop->contains(BB)) continue;
+						if (LI->getLoopFor(BB) != myloop) continue;
+						for (BasicBlock::iterator II = BB->begin(), E = BB->end(); II != E; ++II) {
+							//	Value *V = I->getOperand(i);
+
+							//Phi...Node we cannot move it into preheader
+							//if ((!II->getName().empty()) && isLoopInvariantOperands(II)) {
+							if ((!II->getName().empty()) && isLoopInvariantOperands(II) && LIset->find(II) == LIset->end() && !isa<PHINode>(II)) {
+								LIset->insert(II);
+								errs() << *II << "\n";
+								setChanged = true;
+							}
+						}
+					}
+				}
+
+				/*
+				for (std::set<Value *>::iterator it = LIset->begin(); it != LIset->end(); ++it) {
+					Value *val = const_cast<Value *>(&*it);
+					errs() << " " << val->getName();
+				}
+				*/
+
+
+
 				return isChanged;
 			}
 
-			bool inInnerLoop(BasicBlock *BB) {
-				assert(myloop->contains(BB) && "only valid if BB is in the loop)");
-				return LI->getLoopFor(BB) != myloop;
-			}
+
+
+
 
 			//depth-first order traverse on the dominatorTree
 			void putAboveHandler(DomTreeNode *N) {
-				assert(N != 0 && "Null dominator tree node?");
 				BasicBlock *BB = N->getBlock();
 
 				//BB should be the immediately withnin L
 				if (!myloop->contains(BB)) return;
 
-				if (!inInnerLoop(BB)) {
+				if (!(LI->getLoopFor(BB) != myloop)) {
 					for (BasicBlock::iterator II = BB->begin(), E = BB->end(); II != E; ) {
 						Instruction &I = *II++;
-
 						//constant folding the instruction????....TO DO....
 						
-						//if (myloop->hasLoopInvariantOperands(&I) && isSafePutAboveInst(I) && isSafeToExecuteUnconditionally(I)) {
-						if (isLoopInvariantOperands(&I) && isSafePutAboveInst(I) && isSafeToExecuteUnconditionally(I)) {
+						if (isLoopInvariantOperands(&I) && isSafePutAboveInst(I) && safeToMove(I)) {
+						//if (isLoopInvariantOperands(&I) && safeToMove(I)) {}
 							errs() << "to be moved into the preheader\n";
 							errs() << I << "\n";
 							putAboveInst(I);
 						}
 					}
 				}
-
 				const std::vector<DomTreeNode*> &Children = N->getChildren();
 				for (unsigned i = 0, e = Children.size(); i != e; ++i) {
 					putAboveHandler(Children[i]);
 				}	
 			}
 
+
+
+			/*
+			bool isLIOperands(Instruction *I) {
+				//if (!myloop->contains(I))
+				bool res = true;
+				for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i) {
+					Value *V = I->getOperand(i);
+					if (isa<Instruction>(V)) {
+						if ()
+						return res &= isLIOperands(dyn_cast<Instruction>(V));
+					} else if (isa<Argument>(V)) {
+						res &= true;	
+					} else {
+						res &= true;
+					}
+					return res;
+				}
+
+				if (isa<Instruction>(I)) {
+
+				} else if (isa<Argument>(I))
+			}
+			*/
+
+
+			/*
+			bool setContainsOperands(Instruction *I) {
+				for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i) {
+					if (!LIset->contains(I))
+						return false;
+				}
+				return true;
+			}
+			*/
+
+			bool isLoopInvariantOperands(Instruction *I) {
+				for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i) {
+					if (!isLI(I->getOperand(i)) && LIset->find(I->getOperand(i)) == LIset->end() )
+						return false;
+				}
+				return true;
+			}
+
+
+			/*
 			bool isLoopInvariantOperands(Instruction *I) {
 				for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i) {
 					if (!isLI(I->getOperand(i)))
@@ -104,19 +197,17 @@ namespace {
 				}
 				return true;
 			}
+			*/
 
 			//we might need to change it to the "reach def" style...
 			bool isLI(Value *V) {
 				if (Instruction *I = dyn_cast<Instruction>(V)) {
-					//errs() << "***************\n";
-					//errs() << *I << "\n";
-					//errs() << "---------------\n";
 					return !myloop->contains(I);
 				}
 				return true;
 			}
 
-			bool isSafeToExecuteUnconditionally(Instruction &Inst) {
+			bool safeToMove(Instruction &Inst) {
 
 				/*
 				if (isSafeToSpeculativelyExecute(&Inst)) {
@@ -125,8 +216,6 @@ namespace {
 					return true;
 				}
 				*/
-
-
 	
 				if (Inst.getParent() == myloop->getHeader()) {
 					errs() << "getHeader...\n";
@@ -156,7 +245,7 @@ namespace {
 						!isa<CmpInst>(I) && !isa<InsertElementInst>(I) && !isa<ExtractElementInst>(I) && !isa<ShuffleVectorInst>(I) &&
 						!isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I))
 					return false;
-				return isSafeToExecuteUnconditionally(I);
+				return safeToMove(I);
 			}
 
 			void putAboveInst(Instruction &I) {
