@@ -1,4 +1,4 @@
-all: licm-pass.so
+all: licm-pass.so dce-pass.so
 
 CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -g -O0
 
@@ -6,6 +6,8 @@ CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -g -O0
 	$(CXX) -dylib -flat_namespace -shared $^ -o $@
 
 licm-pass.o: licm-pass.cpp
+
+dce-pass.o: dce-pass.cpp IDFA.h dceAnalysis.h
 
 clean:
 	rm -f *.o *~ *.so

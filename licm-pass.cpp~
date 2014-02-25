@@ -49,6 +49,7 @@ namespace {
 			LICM() : LoopPass(ID) {
 				initializeLICMPass(*PassRegistry::getPassRegistry());
 			}
+
 			virtual bool runOnLoop(Loop *L, LPPassManager &LPM) {
 				isChanged = false;
 				LI = &getAnalysis<LoopInfo>();
@@ -56,9 +57,6 @@ namespace {
  				DT = &getAnalysis<DominatorTree>();
 				myloop = L;
 				preheader = L->getLoopPreheader();
-
-			//	for (
-
 
 				if (preheader)
 					putAboveHandler(DT->getNode(L->getHeader()));
@@ -84,7 +82,10 @@ namespace {
 
 						//constant folding the instruction????....TO DO....
 						
-						if (myloop->hasLoopInvariantOperands(&I) && isSafePutAboveInst(I) && isSafeToExecuteUnconditionally(I)) {
+						//if (myloop->hasLoopInvariantOperands(&I) && isSafePutAboveInst(I) && isSafeToExecuteUnconditionally(I)) {
+						if (isLoopInvariantOperands(&I) && isSafePutAboveInst(I) && isSafeToExecuteUnconditionally(I)) {
+							errs() << "to be moved into the preheader\n";
+							errs() << I << "\n";
 							putAboveInst(I);
 						}
 					}
@@ -96,16 +97,46 @@ namespace {
 				}	
 			}
 
-			bool isSafeToExecuteUnconditionally(Instruction &Inst) {
-				if (isSafeToSpeculativelyExecute(&Inst))
-					return true;
-				
-				if (Inst.getParent() == myloop->getHeader())
-					return true;
+			bool isLoopInvariantOperands(Instruction *I) {
+				for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i) {
+					if (!isLI(I->getOperand(i)))
+						return false;
+				}
+				return true;
+			}
 
+			//we might need to change it to the "reach def" style...
+			bool isLI(Value *V) {
+				if (Instruction *I = dyn_cast<Instruction>(V)) {
+					//errs() << "***************\n";
+					//errs() << *I << "\n";
+					//errs() << "---------------\n";
+					return !myloop->contains(I);
+				}
+				return true;
+			}
+
+			bool isSafeToExecuteUnconditionally(Instruction &Inst) {
+
+				/*
+				if (isSafeToSpeculativelyExecute(&Inst)) {
+					errs() << "isSafeToSpeculatively\n";
+					errs() << Inst << "\n";
+					return true;
+				}
+				*/
+
+
+	
+				if (Inst.getParent() == myloop->getHeader()) {
+					errs() << "getHeader...\n";
+					errs() << Inst << "\n";
+					return true;
+				}
+
+				/*
 				SmallVector<BasicBlock*, 8> ExitBlocks;
 				myloop->getExitBlocks(ExitBlocks);
-
 				for (unsigned i = 0, e = ExitBlocks.size(); i != e; ++i) {
 					if (!DT->dominates(Inst.getParent(), ExitBlocks[i]))
 						return false;
@@ -113,7 +144,10 @@ namespace {
 
 				if (ExitBlocks.empty())
 					return false;
+				*/
 
+				errs() << "Dominate......\n";
+				errs() << Inst << "\n";
 				return true;
 			}
 
@@ -126,8 +160,7 @@ namespace {
 			}
 
 			void putAboveInst(Instruction &I) {
-				//DEBUG(dbgs() << "LICM hoisting to " << Preheader->getName() << ": " << I << "\n");
-				I.moveBefore(Preheader->getTerminator());
+				I.moveBefore(preheader->getTerminator());
 				isChanged = true;
 			}
 
@@ -141,42 +174,6 @@ namespace {
 				AU.addRequiredID(LoopSimplifyID);
 			}
 
-
-			/*
-			virtual bool runOnFunction(Function &F) {
-				std::vector<Value *> domain;
-				for (Function::arg_iterator arg = F.arg_begin(); arg != F.arg_end(); ++arg) {
-					domain.push_back(arg);
-				}
-				for (inst_iterator ii = inst_begin(F), ie = inst_end(F); ii != ie; ++ii) {
-					if (!ii->getName().empty()) {
-						domain.push_back(&*ii);
-					}
-				}
-				ValueMap<const BasicBlock *, idfaInfo *> *BBtoInfo = new ValueMap<const BasicBlock *, idfaInfo *>();		
-				ValueMap<const Instruction *, idfaInfo *> *InstToInfo = new ValueMap<const Instruction *, idfaInfo *>();
-
-				LICMAnalysis<llvm::Value *> *licmAnly = new LICMAnalysis<llvm::Value *>();
-				licmAnly->analysis(domain, F, false, *BBtoInfo, *InstToInfo);
-
-				Annotator<Value *> annot(*BBtoInfo, *InstToInfo, domain);
-				F.print(errs(), &annot);
-
-				BitVector *toErase = new BitVector(*((*BBtoInfo)[&(F.front())]->in)); 
-
-				errs() << "flag1\n";
-				delete BBtoInfo; 
-				errs() << "flag2\n";
-				delete InstToInfo;
-				errs() << "flag3\n";
-
-				errs() << "in of entry block\n";
-				//licmAnly->BVprint(BBtoInfo[&(F.front())]->in);
-				delete licmAnly;
-				bool isChanged =  eraseLICM(domain, *toErase);
-				return false;
-			}
-			*/
 	};
 
 	// LLVM uses the address of this static member to identify the pass, so the
