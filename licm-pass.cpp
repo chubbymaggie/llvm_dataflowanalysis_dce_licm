@@ -45,7 +45,7 @@ namespace {
 			LoopInfo *LI;
 			DominatorTree *DT;
 			bool isChanged;
-			std::set<Value *> *LIset;
+			std::vector<Value *> *LIset;
 			LICM() : LoopPass(ID) {
 				initializeLICMPass(*PassRegistry::getPassRegistry());
 			}
@@ -67,19 +67,38 @@ namespace {
 				errs() << "Exit\n";
 				SmallVector<BasicBlock*, 8> ExitBlocks;
 				myloop->getExitBlocks(ExitBlocks);
+
 				for (unsigned i = 0, e = ExitBlocks.size(); i != e; ++i) {
 					errs() << *ExitBlocks[i] << "\n";
 				}
 
+/*
 
+				std::vector<Value *> domain;
+				for (Function::arg_iterator arg = F.arg_begin(); arg != F.arg_end(); ++arg) {
+					domain.push_back(arg);
+				}
+				for (inst_iterator ii = inst_begin(F), ie = inst_end(F); ii != ie; ++ii) {
+					if (!ii->getName().empty()) {
+						domain.push_back(&*ii);
+					}
+				}
+				ValueMap<const BasicBlock *, idfaInfo *> BBtoInfo;		
+				ValueMap<const Instruction *, idfaInfo *> InstToInfo;
 
+				ReachAnalysis<llvm::Value *> *reachAnly = new ReachAnalysis<llvm::Value *>();
+				reachAnly->analysis(domain, F, true, BBtoInfo, InstToInfo);
+
+*/
+
+				//replace isLoopInvariant with the ReachDef definition.........................
 				/*
 				if (preheader)
 					putAboveHandler(DT->getNode(L->getHeader()));
 				*/
 
 				errs() << "&&&&&&&&&&&&&&&&&&&&&&&&&&\n";
-				LIset = new std::set<Value *>(); 
+				LIset = new std::vector<Value *>(); 
 				bool setChanged = true;
 				while(setChanged) {
 					setChanged = false;
@@ -93,8 +112,11 @@ namespace {
 
 							//Phi...Node we cannot move it into preheader
 							//if ((!II->getName().empty()) && isLoopInvariantOperands(II)) {
-							if ((!II->getName().empty()) && isLoopInvariantOperands(II) && LIset->find(II) == LIset->end() && !isa<PHINode>(II)) {
-								LIset->insert(II);
+							//if ((!II->getName().empty()) && isLoopInvariantOperands(II) && LIset->find(II) == LIset->end() && !isa<PHINode>(II)) {
+							//if (isLoopInvariantOperands(II) && (LIset->find(II) == LIset->end()) && isSafeInst(II)) {
+							//Notice......II cannot be a argument....
+							if (isLoopInvariantOperands(II) && std::find(LIset->begin(), LIset->end(), II) == LIset->end() && isSafeInst(II)) {
+								LIset->push_back(II);
 								errs() << *II << "\n";
 								setChanged = true;
 							}
@@ -102,20 +124,94 @@ namespace {
 					}
 				}
 
+				errs() << "****************\n";
 				/*
-				for (std::set<Value *>::iterator it = LIset->begin(); it != LIset->end(); ++it) {
-					Value *val = const_cast<Value *>(&*it);
-					errs() << " " << val->getName();
+				for (int i = 0; i < LIset->size(); ++i) {
+					Value *val = LIset[i];
+					errs() << val->getName() << "\n";
 				}
 				*/
 
+				for (std::vector<Value *>::iterator it = LIset->begin(); it != LIset->end(); ++it) {
+					Value *val = *it;
+					errs() << " " << val->getName() << "\n";
+				}
 
+				bool hoistChanged = true;
+				while (hoistChanged) {
+					hoistChanged = false;
+					errs() << "coming into the hoistChanged loop\n";
+					//for (std::vector<Value *>::iterator it = LIset->begin(), ie = LIset->end(); it != ie; ) {
+					for (std::vector<Value *>::iterator it = LIset->begin(); it != LIset->end(); ) {
+						//std::vector<Value *>::iterator cit = it;
+						//it++;
+						Value *val = *it;
+						//errs() << "cit:" << val->getName() << "\n";
+						//Value *val2 = *it;
+						//errs() << "it:" << val2->getName() << "\n";
+						if (Instruction *Inst = dyn_cast<Instruction>(val)) {
+							if (isLoopInvariantOprInloop(Inst) && dominateExits(Inst) && dominateUses(Inst)) {
+								errs() << "haha.....";
+								errs() << *Inst << "\n";
+								putAboveInst(Inst);
+								it = LIset->erase(it);
+								hoistChanged = true;
+								errs() << "out of if\n";
+							} else {
+								it++;
+							}
+						} else {
+							it++;
+						}
+						//Value *val3 = *it;
+						//errs() << "final it:" << val3->getName() << "\n";
+						errs() << "flag:" << (it == LIset->end()) << "\n";
+					}
+					errs() << "out of for loop\n";
+				}
 
 				return isChanged;
 			}
 
+			bool dominateUses(Instruction *I) {				
+				for (Value::use_iterator UI = I->use_begin(), UE = I->use_end(); UI != UE; ++UI) {
+					if (Instruction *useI = dyn_cast<Instruction>(*UI)) {
+						if (!(DT->dominates(I, useI))) {
+							return false;
+						}
+					}
+				}
+				return true;	
+			}
 
+			//is it necessary......?
+			bool isSafeInst(Instruction *I) {
+				//if (I->getName().empty() || isa<PHINode>(I)) {
+				if (isa<PHINode>(I)) {
+					return false;
+				}
+	
+				//if (!isa<StoreInst>(I) && !isa<BinaryOperator>(I) && !isa<CastInst>(I) && !isa<SelectInst>(I) && !isa<GetElementPtrInst>(I) &&
+				if (!isa<BinaryOperator>(I) && !isa<CastInst>(I) && !isa<SelectInst>(I) && !isa<GetElementPtrInst>(I) &&
+						!isa<CmpInst>(I) && !isa<InsertElementInst>(I) && !isa<ExtractElementInst>(I) && !isa<ShuffleVectorInst>(I) &&
+						!isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I))
+					return false;
+			
+				return true;
+			}
 
+			/*
+			bool isSafePutAboveInst(Instruction  &I) {
+
+			//if( !isa<BasicBlock>(&**op_it)
+			
+				if (!isa<BinaryOperator>(I) && !isa<CastInst>(I) && !isa<SelectInst>(I) && !isa<GetElementPtrInst>(I) &&
+						!isa<CmpInst>(I) && !isa<InsertElementInst>(I) && !isa<ExtractElementInst>(I) && !isa<ShuffleVectorInst>(I) &&
+						!isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I))
+					return false;
+				return safeToMove(I);
+			}
+			*/
 
 
 			//depth-first order traverse on the dominatorTree
@@ -134,7 +230,7 @@ namespace {
 						//if (isLoopInvariantOperands(&I) && safeToMove(I)) {}
 							errs() << "to be moved into the preheader\n";
 							errs() << I << "\n";
-							putAboveInst(I);
+							putAboveInst(&I);
 						}
 					}
 				}
@@ -182,7 +278,16 @@ namespace {
 
 			bool isLoopInvariantOperands(Instruction *I) {
 				for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i) {
-					if (!isLI(I->getOperand(i)) && LIset->find(I->getOperand(i)) == LIset->end() )
+					if (!isLI(I->getOperand(i)) && std::find(LIset->begin(), LIset->end(), I->getOperand(i)) == LIset->end() )
+						return false;
+				}
+				return true;
+			}
+
+
+			bool isLoopInvariantOprInloop(Instruction *I) {
+				for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i) {
+					if (!isLI(I->getOperand(i)) )
 						return false;
 				}
 				return true;
@@ -204,6 +309,23 @@ namespace {
 				if (Instruction *I = dyn_cast<Instruction>(V)) {
 					return !myloop->contains(I);
 				}
+				return true;
+			}
+
+			bool dominateExits(Instruction *I) {
+
+				if (I->getParent() == myloop->getHeader()) {
+					return true;
+				}
+				SmallVector<BasicBlock*, 8> ExitBlocks;
+				myloop->getExitBlocks(ExitBlocks);
+				for (unsigned i = 0, e = ExitBlocks.size(); i != e; ++i) {
+					if (!DT->dominates(I->getParent(), ExitBlocks[i]))
+						return false;
+				}
+
+				if (ExitBlocks.empty())
+					return false;
 				return true;
 			}
 
@@ -241,6 +363,7 @@ namespace {
 			}
 
 			bool isSafePutAboveInst(Instruction  &I) {
+
 				if (!isa<BinaryOperator>(I) && !isa<CastInst>(I) && !isa<SelectInst>(I) && !isa<GetElementPtrInst>(I) &&
 						!isa<CmpInst>(I) && !isa<InsertElementInst>(I) && !isa<ExtractElementInst>(I) && !isa<ShuffleVectorInst>(I) &&
 						!isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I))
@@ -248,8 +371,8 @@ namespace {
 				return safeToMove(I);
 			}
 
-			void putAboveInst(Instruction &I) {
-				I.moveBefore(preheader->getTerminator());
+			void putAboveInst(Instruction *I) {
+				I->moveBefore(preheader->getTerminator());
 				isChanged = true;
 			}
 

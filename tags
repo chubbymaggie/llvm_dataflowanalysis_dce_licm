@@ -31,6 +31,7 @@ InstToInfo	IDFA.h	/^				ValueMap<const Instruction *, idfaInfo *> &InstToInfo;$/
 LI	licm-pass.cpp	/^			LoopInfo *LI;$/;"	m	class:__anon7::LICM	file:
 LICM	licm-pass.cpp	/^			LICM() : LoopPass(ID) {$/;"	f	class:__anon7::LICM
 LICM	licm-pass.cpp	/^	class LICM : public LoopPass {$/;"	c	namespace:__anon7	file:
+LIset	licm-pass.cpp	/^			std::vector<Value *> *LIset;$/;"	m	class:__anon7::LICM	file:
 LiveAnalysis	liveAnalysis.h	/^		LiveAnalysis() : IDFA<FlowType>() {}$/;"	f	class:__anon3::LiveAnalysis
 LiveAnalysis	liveAnalysis.h	/^	class LiveAnalysis: public IDFA<FlowType> {$/;"	c	namespace:__anon3
 Liveness	live.cpp	/^			Liveness() : FunctionPass(ID) {}$/;"	f	class:__anon6::Liveness
@@ -42,12 +43,20 @@ ReachDef	reach.cpp	/^	class ReachDef : public FunctionPass {$/;"	c	namespace:__a
 WorklistAlg	IDFA.h	/^	void IDFA<FlowType>::WorklistAlg(BinfoMap &BBtoInfo, IinfoMap &InstToInfo, ValueMap<FlowType, unsigned> &domainToIdx, bool isForward, Function &F) {$/;"	f	class:__anon5::IDFA
 analysis	IDFA.h	/^	void IDFA<FlowType>::analysis(std::vector<FlowType> domain, Function& F, bool isForward, BinfoMap &BBtoInfo, IinfoMap &InstToInfo) {$/;"	f	class:__anon5::IDFA
 cond1	e1.c	/^int cond1(int u, int v) {$/;"	f
+cond1	test/e1.c	/^int cond1(int u, int v) {$/;"	f
 cond2	e2.c	/^int cond2(int u, int v) {$/;"	f
+cond2	test/e2.c	/^int cond2(int u, int v) {$/;"	f
 cond3	e3.c	/^int cond3(int u, int v) {$/;"	f
+cond3	test/e3.c	/^int cond3(int u, int v) {$/;"	f
 domain	IDFA.h	/^				std::vector<FlowType> &domain;$/;"	m	class:__anon5::Annotator
+dominateExits	licm-pass.cpp	/^			bool dominateExits(Instruction *I) {$/;"	f	class:__anon7::LICM
+dominateUses	licm-pass.cpp	/^			bool dominateUses(Instruction *I) {				$/;"	f	class:__anon7::LICM
 emitBasicBlockStartAnnot	IDFA.h	/^				virtual void emitBasicBlockStartAnnot(const BasicBlock *bb, formatted_raw_ostream &os) {$/;"	f	class:__anon5::Annotator
 emitInstructionAnnot	IDFA.h	/^				virtual void emitInstructionAnnot(const Instruction *i, formatted_raw_ostream &os) {$/;"	f	class:__anon5::Annotator
 eraseDCE	dce-pass.cpp	/^			bool eraseDCE(std::vector<Value *> domain, BitVector &bv) {$/;"	f	class:__anon1::DCE
+f	test/codecopy.py	/^                f = open("test.txt","a")$/;"	v
+filenames	test/codecopy.py	/^filenames = os.listdir(os.curdir)				# 获得当前目录中的内容$/;"	v
+fr	test/codecopy.py	/^                fr = open(filename,"r")$/;"	v
 gen	IDFA.h	/^			BitVector *gen;$/;"	m	class:__anon5::idfaInfo
 getAnalysisUsage	dce-pass.cpp	/^			virtual void getAnalysisUsage(AnalysisUsage &AU) const {$/;"	f	class:__anon1::DCE
 getAnalysisUsage	licm-pass.cpp	/^			virtual void getAnalysisUsage(AnalysisUsage &AU) const {$/;"	f	class:__anon7::LICM
@@ -59,10 +68,13 @@ getBoundaryCondition	reachAnalysis.h	/^	BitVector* ReachAnalysis<FlowType>::getB
 hc1	e4.c	/^int hc1(int a, int b) {$/;"	f
 hc1	e5.c	/^int hc1(int a, int b) {$/;"	f
 hc1	e6.c	/^int hc1(int a, int b) {$/;"	f
+hc1	test/e4.c	/^int hc1(int a, int b) {$/;"	f
+hc1	test/e5.c	/^int hc1(int a, int b) {$/;"	f
+hc1	test/e6.c	/^int hc1(int a, int b) {$/;"	f
+hc16	jianyu.c	/^int hc16(int a, int b) {$/;"	f
 idfaInfo	IDFA.h	/^			idfaInfo(unsigned len) {$/;"	f	class:__anon5::idfaInfo
 idfaInfo	IDFA.h	/^	class idfaInfo {$/;"	c	namespace:__anon5
 in	IDFA.h	/^			BitVector *in;$/;"	m	class:__anon5::idfaInfo
-inInnerLoop	licm-pass.cpp	/^			bool inInnerLoop(BasicBlock *BB) {$/;"	f	class:__anon7::LICM
 initFlowValues	dceAnalysis.h	/^	BitVector* DCEAnalysis<FlowType>::initFlowValues(int len) {$/;"	f	class:__anon4::DCEAnalysis
 initFlowValues	liveAnalysis.h	/^	BitVector* LiveAnalysis<FlowType>::initFlowValues(int len) {$/;"	f	class:__anon3::LiveAnalysis
 initFlowValues	reachAnalysis.h	/^	BitVector* ReachAnalysis<FlowType>::initFlowValues(int len) {$/;"	f	class:__anon8::ReachAnalysis
@@ -74,8 +86,9 @@ initInstGenKill	reachAnalysis.h	/^	void ReachAnalysis<FlowType>::initInstGenKill
 isChanged	licm-pass.cpp	/^			bool isChanged;$/;"	m	class:__anon7::LICM	file:
 isLI	licm-pass.cpp	/^			bool isLI(Value *V) {$/;"	f	class:__anon7::LICM
 isLoopInvariantOperands	licm-pass.cpp	/^			bool isLoopInvariantOperands(Instruction *I) {$/;"	f	class:__anon7::LICM
+isLoopInvariantOprInloop	licm-pass.cpp	/^			bool isLoopInvariantOprInloop(Instruction *I) {$/;"	f	class:__anon7::LICM
+isSafeInst	licm-pass.cpp	/^			bool isSafeInst(Instruction *I) {$/;"	f	class:__anon7::LICM
 isSafePutAboveInst	licm-pass.cpp	/^			bool isSafePutAboveInst(Instruction  &I) {$/;"	f	class:__anon7::LICM
-isSafeToExecuteUnconditionally	licm-pass.cpp	/^			bool isSafeToExecuteUnconditionally(Instruction &Inst) {$/;"	f	class:__anon7::LICM
 kill	IDFA.h	/^			BitVector *kill;$/;"	m	class:__anon5::idfaInfo
 meetOp	dceAnalysis.h	/^	void DCEAnalysis<FlowType>::meetOp(BitVector *op1, BitVector *op2) {$/;"	f	class:__anon4::DCEAnalysis
 meetOp	liveAnalysis.h	/^	void LiveAnalysis<FlowType>::meetOp(BitVector *op1, BitVector *op2) {$/;"	f	class:__anon3::LiveAnalysis
@@ -88,7 +101,7 @@ preheader	licm-pass.cpp	/^			BasicBlock *preheader;$/;"	m	class:__anon7::LICM	fi
 preorder	IDFA.h	/^	void IDFA<FlowType>::preorder(BinfoMap &BBtoInfo, IinfoMap &InstToInfo, std::vector<BasicBlock *> &Worklist, ValueMap<FlowType, unsigned> &domainToIdx) {$/;"	f	class:__anon5::IDFA
 preorderInst	IDFA.h	/^	void IDFA<FlowType>::preorderInst(BasicBlock *Bi, IinfoMap &InstToInfo, BinfoMap &BBtoInfo, ValueMap<FlowType, unsigned> &domainToIdx) {$/;"	f	class:__anon5::IDFA
 putAboveHandler	licm-pass.cpp	/^			void putAboveHandler(DomTreeNode *N) {$/;"	f	class:__anon7::LICM
-putAboveInst	licm-pass.cpp	/^			void putAboveInst(Instruction &I) {$/;"	f	class:__anon7::LICM
+putAboveInst	licm-pass.cpp	/^			void putAboveInst(Instruction *I) {$/;"	f	class:__anon7::LICM
 registerMyPass	dce-pass.cpp	/^	static void registerMyPass(const PassManagerBuilder &,$/;"	f	namespace:__anon1
 registerMyPass	licm-pass.cpp	/^	static void registerMyPass(const PassManagerBuilder &,$/;"	f	namespace:__anon7
 registerMyPass	live.cpp	/^	static void registerMyPass(const PassManagerBuilder &,$/;"	f	namespace:__anon6
@@ -97,22 +110,36 @@ runOnFunction	dce-pass.cpp	/^			virtual bool runOnFunction(Function &F) {$/;"	f	
 runOnFunction	live.cpp	/^			virtual bool runOnFunction(Function &F) {$/;"	f	class:__anon6::Liveness
 runOnFunction	reach.cpp	/^			virtual bool runOnFunction(Function &F) {$/;"	f	class:__anon2::ReachDef
 runOnLoop	licm-pass.cpp	/^			virtual bool runOnLoop(Loop *L, LPPassManager &LPM) {$/;"	f	class:__anon7::LICM
+safeToMove	licm-pass.cpp	/^			bool safeToMove(Instruction &Inst) {$/;"	f	class:__anon7::LICM
 setBoundaryCondition	IDFA.h	/^	void IDFA<FlowType>::setBoundaryCondition(Function &F, BinfoMap &BBtoInfo, bool isForward, ValueMap<FlowType, unsigned> &domainToIdx) {$/;"	f	class:__anon5::IDFA
 setFlowValues	IDFA.h	/^	void IDFA<FlowType>::setFlowValues(Function &F, BinfoMap &BBtoInfo, bool isForward, int len) {$/;"	f	class:__anon5::IDFA
 stdloop	deeploopinvariant.c	/^int stdloop(int x) {$/;"	f
 stdloop	e0.c	/^int stdloop(int x) {$/;"	f
 stdloop	e00.c	/^int stdloop(int a, int b) {$/;"	f
+stdloop	e01.c	/^int stdloop(int x, int y) {$/;"	f
+stdloop	test/deeploopinvariant.c	/^int stdloop(int x) {$/;"	f
+stdloop	test/e0.c	/^int stdloop(int x) {$/;"	f
+stdloop	test/e00.c	/^int stdloop(int a, int b) {$/;"	f
+stdloop	test/e01.c	/^int stdloop(int x, int y) {$/;"	f
 sum	inputfile/loop2.c	/^int sum (int a, int b) {$/;"	f
 sum	inputfile/sum.c	/^int sum (int a, int b) {$/;"	f
 sum	inputfile/test1.c	/^int sum (int a, int b, int c) {$/;"	f
 sum	inputfile/test2.c	/^int sum (int a, int b, int c) {$/;"	f
+sum	test/test3.c	/^int sum (int a, int b, int c) {$/;"	f
 sum	test3.c	/^int sum (int a, int b, int c) {$/;"	f
+test	test/test01.c	/^void test(int x) {$/;"	f
 test	test01.c	/^void test(int x) {$/;"	f
 test02	nestedloop.c	/^void test02(int a, int b) {$/;"	f
 test02	nestedloop2.c	/^int test02(int a, int b) {$/;"	f
+test02	test/nestedloop.c	/^void test02(int a, int b) {$/;"	f
+test02	test/nestedloop2.c	/^int test02(int a, int b) {$/;"	f
+test02	test/test02.c	/^void test02(int a) {$/;"	f
+test02	test/test03.c	/^void test02(int a, int b) {$/;"	f
+test02	test/test05.c	/^void test02(int a, int b) {$/;"	f
 test02	test02.c	/^void test02(int a) {$/;"	f
 test02	test03.c	/^void test02(int a, int b) {$/;"	f
 test02	test05.c	/^void test02(int a, int b) {$/;"	f
+test7	xinyu.c	/^int test7(int a, int b) {$/;"	f
 transferFunc	dceAnalysis.h	/^	BitVector* DCEAnalysis<FlowType>::transferFunc(BitVector *input, BitVector *gen, BitVector *kill) {$/;"	f	class:__anon4::DCEAnalysis
 transferFunc	liveAnalysis.h	/^	BitVector* LiveAnalysis<FlowType>::transferFunc(BitVector *input, BitVector *gen, BitVector *kill) {$/;"	f	class:__anon3::LiveAnalysis
 transferFunc	reachAnalysis.h	/^	BitVector* ReachAnalysis<FlowType>::transferFunc(BitVector *input, BitVector *gen, BitVector *kill) {$/;"	f	class:__anon8::ReachAnalysis
