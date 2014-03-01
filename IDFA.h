@@ -1,4 +1,4 @@
-// CS380C S14 Assignment 3: IDFA.h
+// CS380C S14 Assignment 4: IDFA.h
 // 
 // Based on code from Todd C. Mowry
 // Modified by Arthur Peters
@@ -128,10 +128,6 @@ namespace {
 				//generate the gen and kill set for the instructions inside a basic block
 				virtual void initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, IinfoMap &InstToInfo) = 0;
 
-				/*
-				//generate the gen and kill set for each block
-				virtual void initGenKill(BasicBlock *Bi, BasicBlock *Pi, ValueMap<Value *, unsigned> &domainToIdx, BinfoMap &BBtoInfo) = 0;
-				*/
 		};
 
 
@@ -226,25 +222,11 @@ namespace {
 			//postorderInst(Si, Bi, InstToInfo, BBtoInfo, domainToIdx);
 			postorderInst(Si, InstToInfo, BBtoInfo, domainToIdx);
 
-
-			errs() << "aout:";
-			BVprint(Sinf->out);
-			errs() << "ain:";
-			BVprint(Sinf->in);
-
-			errs() << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n";
-
 			//initGenKill(Si, Bi, domainToIdx, BBtoInfo);
-
 			//delete Sinf->in;
 			//Sinf->in = transferFunc(Sinf->out, Sinf->gen, Sinf->kill);
-
 			//transferFunc()
-
-
 			//Sinf->in ..... iterate each instruction...... ->      Sinf->out
-
-
 			if (succIt == succ_begin(Bi)) {
 				*(BBinf->out) = *(Sinf->in);
 			} else {
@@ -307,7 +289,6 @@ namespace {
 				Worklist.push_back(&*Bi);
 			}
 		}
-		errs() << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n";
 		while (!Worklist.empty()) {
 			if (isForward) 
 				preorder(BBtoInfo, InstToInfo, Worklist, domainToIdx);
