@@ -1,7 +1,6 @@
 
 #include <stdio.h>
 
-/*
 void test(int x) {
 	int a, b, c;
 	x = x + 1;
@@ -236,7 +235,6 @@ int hc16(int a, int b) {
 	x = t;
 	return x;
 }
-*/
 
 int hc161(int a, int b) {
 	int x;

@@ -1,4 +1,4 @@
-all: licm2-pass.so dce-pass.so
+all: licm-pass.so dce-pass.so
 
 CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -g -O0
 
