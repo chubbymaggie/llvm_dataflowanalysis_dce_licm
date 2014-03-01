@@ -25,8 +25,7 @@
 #include "llvm/Support/CFG.h"
 #include "llvm/Transforms/Scalar.h"
 
-#include "llvm/Analysis/ValueTracking.h"
-
+//#include "llvm/Analysis/ValueTracking.h"
 //#include "licmAnalysis.h"
 
 #include <ostream>
@@ -73,7 +72,6 @@ namespace {
 				}
 
 /*
-
 				std::vector<Value *> domain;
 				for (Function::arg_iterator arg = F.arg_begin(); arg != F.arg_end(); ++arg) {
 					domain.push_back(arg);
@@ -85,10 +83,8 @@ namespace {
 				}
 				ValueMap<const BasicBlock *, idfaInfo *> BBtoInfo;		
 				ValueMap<const Instruction *, idfaInfo *> InstToInfo;
-
 				ReachAnalysis<llvm::Value *> *reachAnly = new ReachAnalysis<llvm::Value *>();
 				reachAnly->analysis(domain, F, true, BBtoInfo, InstToInfo);
-
 */
 
 				//replace isLoopInvariant with the ReachDef definition.........................
@@ -97,49 +93,22 @@ namespace {
 					putAboveHandler(DT->getNode(L->getHeader()));
 				*/
 
-				LIset = new std::vector<Value *>(); 
-				bool setChanged = true;
-				while(setChanged) {
-					setChanged = false;
-					for (unsigned i = 0, e = L->getBlocks().size(); i != e; ++i) {
-						BasicBlock *BB = L->getBlocks()[i];
-
-						if (!myloop->contains(BB)) continue;
-						if (LI->getLoopFor(BB) != myloop) continue;
-						for (BasicBlock::iterator II = BB->begin(), E = BB->end(); II != E; ++II) {
-							//	Value *V = I->getOperand(i);
-
-							//Phi...Node we cannot move it into preheader
-							//if ((!II->getName().empty()) && isLoopInvariantOperands(II)) {
-							//if ((!II->getName().empty()) && isLoopInvariantOperands(II) && LIset->find(II) == LIset->end() && !isa<PHINode>(II)) {
-							//if (isLoopInvariantOperands(II) && (LIset->find(II) == LIset->end()) && isSafeInst(II)) {
-							//Notice......II cannot be a argument....
-							if (isLoopInvariantOperands(II) && std::find(LIset->begin(), LIset->end(), II) == LIset->end() && isSafeInst(II)) {
-								LIset->push_back(II);
-								errs() << *II << "\n";
-								setChanged = true;
-							}
-						}
-					}
-				}
-
 				for (std::vector<Value *>::iterator it = LIset->begin(); it != LIset->end(); ++it) {
 					Value *val = *it;
 					errs() << " " << val->getName() << "\n";
 				}
+				genLIset(L);
+				modifyLI();
+				return isChanged;
+			}
 
+			void modifyLI() {
 				bool hoistChanged = true;
 				while (hoistChanged) {
 					hoistChanged = false;
 					errs() << "coming into the hoistChanged loop\n";
-					//for (std::vector<Value *>::iterator it = LIset->begin(), ie = LIset->end(); it != ie; ) {
 					for (std::vector<Value *>::iterator it = LIset->begin(); it != LIset->end(); ) {
-						//std::vector<Value *>::iterator cit = it;
-						//it++;
 						Value *val = *it;
-						//errs() << "cit:" << val->getName() << "\n";
-						//Value *val2 = *it;
-						//errs() << "it:" << val2->getName() << "\n";
 						if (Instruction *Inst = dyn_cast<Instruction>(val)) {
 							if (isLoopInvariantOprInloop(Inst) && dominateExits(Inst) && dominateUses(Inst)) {
 								errs() << "haha.....";
@@ -160,9 +129,32 @@ namespace {
 					}
 					errs() << "out of for loop\n";
 				}
-
-				return isChanged;
 			}
+
+			void genLIset(Loop *L) {
+				LIset = new std::vector<Value *>(); 
+				bool setChanged = true;
+				while(setChanged) {
+					setChanged = false;
+					for (unsigned i = 0, e = L->getBlocks().size(); i != e; ++i) {
+						BasicBlock *BB = L->getBlocks()[i];
+						if (!myloop->contains(BB)) continue;
+						if (LI->getLoopFor(BB) != myloop) continue;
+						for (BasicBlock::iterator II = BB->begin(), E = BB->end(); II != E; ++II) {
+							//	Value *V = I->getOperand(i);
+
+							//if (isLoopInvariantOperands(II) && (LIset->find(II) == LIset->end()) && isSafeInst(II)) {   }
+							//Notice......II cannot be a argument....
+							if (isLoopInvariantOperands(II) && std::find(LIset->begin(), LIset->end(), II) == LIset->end() && isSafeInst(II)) {
+								LIset->push_back(II);
+								errs() << *II << "\n";
+								setChanged = true;
+							}
+						}
+					}
+				}
+			}
+
 
 			bool dominateUses(Instruction *I) {				
 				for (Value::use_iterator UI = I->use_begin(), UE = I->use_end(); UI != UE; ++UI) {
@@ -335,6 +327,7 @@ namespace {
 					errs() << Inst << "\n";
 					return true;
 				}
+
 
 				/*
 				SmallVector<BasicBlock*, 8> ExitBlocks;

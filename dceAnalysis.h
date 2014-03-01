@@ -39,6 +39,7 @@ namespace {
 		virtual BitVector* transferFunc(BitVector *input, BitVector *gen, BitVector *kill);
 		//generate the gen and kill set for the instructions inside a basic block
 		virtual void initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo);
+		virtual void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo);
 		//get the boundary condition
 		virtual BitVector* getBoundaryCondition(int len, Function &F, ValueMap<Value *, unsigned> &domainToIdx);
 		//get the initial flow values
@@ -101,6 +102,48 @@ namespace {
 
 		}
 	}
+
+
+	template <class FlowType>
+	void DCEAnalysis<FlowType>::initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {
+		idfaInfo *instInf = InstToInfo[ii];
+		(instInf->gen)->reset(0, domainToIdx.size());
+		(instInf->kill)->reset(0, domainToIdx.size());
+
+		//temporarily we set the gen set as the empty set.
+		ValueMap<Value*, unsigned>::const_iterator iter = domainToIdx.find(dyn_cast<Instruction>(ii));
+		if (iter != domainToIdx.end()) {
+							
+			Value *val = ii;
+			int valIdx = domainToIdx[val];
+			if (!((*(instInf->out))[valIdx])) {
+				PHINode *pN = dyn_cast<PHINode>(&*ii);
+				unsigned idx = pN->getBasicBlockIndex(BB);
+				if (idx >=0 && idx < pN->getNumIncomingValues()) {
+					Value *brval = pN->getIncomingValue(idx);
+					if (isa<Instruction>(brval) || isa<Argument>(brval)) {
+						unsigned brvalIdx = domainToIdx[brval];
+						(instInf->kill)->set(brvalIdx);
+					}
+				}
+			}
+		} else {
+			errs() << "the phinode instrution is not in the domain!\n";
+			User::op_iterator OI, OE;
+			for (OI = ii->op_begin(), OE = ii->op_end(); OI != OE; ++OI) {
+				Value *val2 = *OI;
+				//check if val2 in domainToIdx??
+				if (isa<Instruction>(val2) || isa<Argument>(val2)) {
+					int valIdx2 = domainToIdx[val2];
+					(instInf->kill)->set(valIdx2);
+				}
+			}
+
+		}
+	}
+
+
+
 
 	/**
 	 * get the boundary condition

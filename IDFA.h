@@ -111,7 +111,9 @@ namespace {
 				void preorderInst(BasicBlock *Bi, IinfoMap &InstToInfo, BinfoMap &BBtoInfo, ValueMap<FlowType, unsigned> &domainToIdx);
 				//backward analysis for instruction level
 				void postorderInst(BasicBlock *Bi, IinfoMap &InstToInfo, BinfoMap &BBtoInfo, ValueMap<FlowType, unsigned> &domainToIdx);
-
+				//backward analysis for instruction level with PHINode into consideration...
+				void postorderInstinBB(BasicBlock *Pi, BasicBlock *Bi, IinfoMap &InstToInfo, BinfoMap &BBtoInfo, ValueMap<FlowType, unsigned> &domainToIdx);
+				//print the BitVector, for debugging....
 				void BVprint(BitVector* BV);
 
 				/**
@@ -127,6 +129,8 @@ namespace {
 				virtual BitVector* initFlowValues(int len) = 0;
 				//generate the gen and kill set for the instructions inside a basic block
 				virtual void initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, IinfoMap &InstToInfo) = 0;
+				//generate the gen and kill set for the PHINode instructions inside a basic block
+				virtual void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, IinfoMap &InstToInfo) = 0;
 
 		};
 
@@ -155,8 +159,7 @@ namespace {
 		//set the Boundary Condition
 		setBoundaryCondition(F, BBtoInfo, isForward, domainToIdx);
 		WorklistAlg(BBtoInfo, InstToInfo, domainToIdx, isForward, F);
-
-		errs() << "Inst level analysis\n";
+		//Inst level analysis
 		InstAnalysis(F, isForward, InstToInfo, BBtoInfo, domainToIdx);
 	}
 
@@ -208,19 +211,21 @@ namespace {
 		idfaInfo *BBinf = BBtoInfo[&*Bi];
 		BitVector *oldOut = new BitVector(*(BBinf->out)); 
 		for (succ_iterator succIt = succ_begin(Bi), succE = succ_end(Bi); succIt != succE; ++succIt) {
-			errs() << "Enter the succBlock....\n";
 			BasicBlock *Si = *succIt;
 			idfaInfo *Sinf = BBtoInfo[Si];
 
+			/*
 			errs() << "********************************************************\n";
 			errs() << Si->getName() << "<-" << Bi->getName() << "\n";
 			errs() << "out:";
 			BVprint(Sinf->out);
 			errs() << "in:";
 			BVprint(Sinf->in);	
+			*/
 
-			//postorderInst(Si, Bi, InstToInfo, BBtoInfo, domainToIdx);
 			postorderInst(Si, InstToInfo, BBtoInfo, domainToIdx);
+			//postorderInstinBB(Bi, Si,  InstToInfo, BBtoInfo, domainToIdx);
+
 
 			//initGenKill(Si, Bi, domainToIdx, BBtoInfo);
 			//delete Sinf->in;
@@ -253,8 +258,12 @@ namespace {
 		for (pred_iterator predIt = pred_begin(Bi), predE = pred_end(Bi); predIt != predE; ++predIt) {
 			BasicBlock *Pi = *predIt;
 			idfaInfo *Pinf = BBtoInfo[Pi];
+
+
 			//initGenKill(Pi, Bi, domainToIdx, BBtoInfo);
-			Pinf->out = transferFunc(Pinf->in, Pinf->gen, Pinf->kill);
+			//Pinf->out = transferFunc(Pinf->in, Pinf->gen, Pinf->kill);
+			preorderInst(Pi, InstToInfo, BBtoInfo, domainToIdx);
+
 			if (predIt == pred_begin(Bi)) {
 				*(BBinf->in) = *(Pinf->out);
 			} else {
@@ -348,31 +357,21 @@ namespace {
 				--ii;
 				//how to collect garbage...
 				InstToInfo[&*ii] = new idfaInfo(domainToIdx.size());
-
 				if (ii == (--(Bi->end()))) {
 					InstToInfo[&*ii]->out = BBtoInfo[&*Bi]->out;
-
-
-					errs() << "BB name:" << Bi->getName() << "\n";
-					errs() << "BB->out:";
-					BVprint(BBtoInfo[&*Bi]->out);
-
-
+					//errs() << "BB name:" << Bi->getName() << "\n";
+					//errs() << "BB->out:";
+					//BVprint(BBtoInfo[&*Bi]->out);
 				} else {
 					BasicBlock::iterator ij = (++ii);
 					--ii;
 					InstToInfo[&*ii]->out = InstToInfo[&*(ij)]->in;
-
-					errs() << "ii->out:";
-					errs() << *ii << "\n";
-					BVprint(InstToInfo[&*ii]->out);
-	
+					//errs() << "ii->out:";
+					//errs() << *ii << "\n";
+					//BVprint(InstToInfo[&*ii]->out);
 				}				
-
 				initInstGenKill(&*ii, domainToIdx, InstToInfo);
-
 				InstToInfo[&*ii]->in = transferFunc(InstToInfo[&*ii]->out, InstToInfo[&*ii]->gen, InstToInfo[&*ii]->kill);	
-
 				if (ii == is) {
 					break;
 				}
@@ -381,6 +380,48 @@ namespace {
 	}
 
 
+	/**
+	 * backward analysis for instruction level with consideration of PHI node
+	 */
+	template<class FlowType>
+	void IDFA<FlowType>::postorderInstinBB(BasicBlock *Pi, BasicBlock *Bi, IinfoMap &InstToInfo, BinfoMap &BBtoInfo, ValueMap<FlowType, unsigned> &domainToIdx) {
+			BasicBlock::iterator ii = Bi->end(), is = Bi->begin();
+			while (true) {
+				--ii;
+				//how to collect garbage...
+				InstToInfo[&*ii] = new idfaInfo(domainToIdx.size());
+				if (ii == (--(Bi->end()))) {
+					InstToInfo[&*ii]->out = BBtoInfo[&*Bi]->out;
+					//errs() << "BB name:" << Bi->getName() << "\n";
+					//errs() << "BB->out:";
+					//BVprint(BBtoInfo[&*Bi]->out);
+				} else {
+					BasicBlock::iterator ij = (++ii);
+					--ii;
+					InstToInfo[&*ii]->out = InstToInfo[&*(ij)]->in;
+					//errs() << "ii->out:";
+					//errs() << *ii << "\n";
+					//BVprint(InstToInfo[&*ii]->out);
+				}				
+
+				if (isa<PHINode>(ii)) {
+					initPHIGenKill(Pi, &*ii, domainToIdx, InstToInfo);
+				} else {
+					initInstGenKill(&*ii, domainToIdx, InstToInfo);
+				}
+
+				InstToInfo[&*ii]->in = transferFunc(InstToInfo[&*ii]->out, InstToInfo[&*ii]->gen, InstToInfo[&*ii]->kill);	
+				if (ii == is) {
+					break;
+				}
+			}
+			BBtoInfo[&*Bi]->in = InstToInfo[&*ii]->in;
+	}
+
+
+	/*
+	 * print the BitVector, for debugging....
+	 */
 	template<class FlowType>
 		void IDFA<FlowType>::BVprint(BitVector* BV) {
 			for (int i = 0; i < (*BV).size(); ++i) {
@@ -388,7 +429,5 @@ namespace {
 			}
 			errs() << "\n";
 		}
-
-
 
 }

@@ -30,6 +30,7 @@ namespace {
 	class DCE : public FunctionPass {
 		public:
 			static char ID;
+			bool isChanged;
 			DCE() : FunctionPass(ID) {}
 			virtual bool runOnFunction(Function &F) {
 				std::vector<Value *> domain;
@@ -47,62 +48,35 @@ namespace {
 				DCEAnalysis<llvm::Value *> *dceAnly = new DCEAnalysis<llvm::Value *>();
 				dceAnly->analysis(domain, F, false, *BBtoInfo, *InstToInfo);
 
+				/*
 				Annotator<Value *> annot(*BBtoInfo, *InstToInfo, domain);
 				F.print(errs(), &annot);
+				*/
 
 				BitVector *toErase = new BitVector(*((*BBtoInfo)[&(F.front())]->in)); 
-
-				errs() << "flag1\n";
 				delete BBtoInfo; 
-				errs() << "flag2\n";
 				delete InstToInfo;
-				errs() << "flag3\n";
-
-				errs() << "in of entry block\n";
-				//dceAnly->BVprint(BBtoInfo[&(F.front())]->in);
 				delete dceAnly;
-				bool isChanged =  eraseDCE(domain, *toErase);
-				return false;
-			}
 
-			/*
-			bool deleteInst(std:  domainToIdx, BitVector &bv) {
-				bool isChanged = false;
-				inst_iterator ii = inst_begin(F), ie = inst_end(F);
-				while (ii != ie) {
-					if (domainToIdx.find(ii) != domain.end()) {
-						if (bv[domainToIdx[&*ii]]) {
-							inst_iterator j = ii;
-							++ii;
-							j->eraseFromParent();
-							isChanged = true;
-						} else {
-							++ii;
-						}
-					} else {
-						++ii;
-					}
-				}
+				eraseDCE(domain, *toErase);
+				return isChanged;
 			}
-			*/
 
 			bool eraseDCE(std::vector<Value *> domain, BitVector &bv) {
-				bool isChanged = false;
-				//for (int i = (bv.size()) - 1; i >= 0; --i) {
-				for (int i = 0; i < bv.size(); ++i) {
-					if (bv[i]) {
-						if (Instruction *ii = dyn_cast<Instruction>(domain[i])) {
-							if (ii->hasNUsesOrMore(1)) {
-								Value *val = UndefValue::get(ii->getType());
-								//Value *val = Constant::getNullValue(ii->getType());
-								if (val != NULL) {	
-									ii->replaceAllUsesWith(val);
-								}
+				isChanged = false;
+				for (int i = (bv.size()) - 1; i >= 0; --i) {
+				//for (int i = 0; i < bv.size(); ++i) {
+					if (!bv[i]) continue;
+					if (Instruction *ii = dyn_cast<Instruction>(domain[i])) {
+						if (ii->hasNUsesOrMore(1)) {
+							Value *val = UndefValue::get(ii->getType());
+							if (val != NULL) {	
+								ii->replaceAllUsesWith(val);
 							}
-							if (ii->getParent()) {
-								ii->eraseFromParent();
-								isChanged = true;
-							}
+						}
+						if (ii->getParent()) {
+							ii->eraseFromParent();
+							isChanged = true;
 						}
 					}
 				}
