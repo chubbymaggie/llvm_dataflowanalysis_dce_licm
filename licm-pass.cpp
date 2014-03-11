@@ -50,11 +50,7 @@ namespace {
 				initializeLICMPass(*PassRegistry::getPassRegistry());
 			}
 
-			// get the domain
-			//1. reaching def....
-			//2. set....function to judge whether the instruction is LI or not.....
-			//3. pass all the 
-
+			// runOnLoop function, similar to runOnFunction
 			virtual bool runOnLoop(Loop *L, LPPassManager &LPM) {
 				isChanged = false;
 				LI = &getAnalysis<LoopInfo>();
@@ -74,7 +70,6 @@ namespace {
 					errs() << *ExitBlocks[i] << "\n";
 				}
 				*/
-
 
 /*
 				std::vector<Value *> domain;
@@ -281,7 +276,6 @@ namespace {
 
 			
 			/* to delete...
-			 *
 			bool safeToMove(Instruction &Inst) {
 				if (isSafeToSpeculativelyExecute(&Inst)) {
 					errs() << "isSafeToSpeculatively\n";
@@ -326,10 +320,8 @@ namespace {
 
 			// We don't modify the program, so we preserve all analyses
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-				//AU.setPreservesAll();
 				AU.setPreservesCFG();
 				AU.addRequired<LoopInfo>();
-				//AU.addRequired<DominatorTreeWrapperPass>();
 				AU.addRequired<DominatorTree>();
 			}
 

@@ -3,5 +3,5 @@ email:jianyu@cs.utexas.edu
 
 run the testcase:
 $make
-$./vsh.sh inputFile/sum
+$./vsh.sh inputFile/test01
 
