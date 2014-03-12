@@ -12,7 +12,7 @@ echo "Unoptimized (with clang)"
 clang $1-simp.bc -O0 -o $1-simp
 ./$1-simp
 
-echo "My LICM optimized (with clang)"
+echo "My DCE optimized (with clang)"
 clang $1-opt.bc -O0 -o $1-opt
 ./$1-opt
 
@@ -25,7 +25,7 @@ llc $1-simp.bc -o $1-simp.s
 gcc $1-simp.s -O0 -o $1-simp.native
 ./$1-simp.native
 
-echo "My LICM optimized (with gcc)"
+echo "My DCE optimized (with gcc)"
 llc $1-opt.bc -o $1-opt.s
 gcc $1-opt.s -O0 -o $1-opt.native
 ./$1-opt.native

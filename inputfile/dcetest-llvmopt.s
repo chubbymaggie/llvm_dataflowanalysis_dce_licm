@@ -1,4 +1,4 @@
-	.file	"inputfile/dcetest-opt.bc"
+	.file	"inputfile/dcetest-llvmopt.bc"
 	.text
 	.globl	test1
 	.align	16, 0x90
@@ -22,13 +22,18 @@ test2:                                  # @test2
 	pushl	%ebp
 	movl	%esp, %ebp
 	movl	$-1, %eax
+	movl	8(%ebp), %ecx
+	jmp	.LBB1_1
 	.align	16, 0x90
+.LBB1_2:                                # %for.body
+                                        #   in Loop: Header=BB1_1 Depth=1
+	leal	3(%ecx,%ecx), %ecx
 .LBB1_1:                                # %for.cond
                                         # =>This Inner Loop Header: Depth=1
 	incl	%eax
-	cmpl	$1000000000, %eax       # imm = 0x3B9ACA00
-	jl	.LBB1_1
-# BB#2:                                 # %for.end
+	cmpl	$999999999, %eax        # imm = 0x3B9AC9FF
+	jle	.LBB1_2
+# BB#3:                                 # %for.end
 	xorl	%eax, %eax
 	popl	%ebp
 	ret

@@ -201,6 +201,9 @@ namespace {
 			for (Function::iterator Bi = F.begin(), Be = F.end(); Bi != Be; ++Bi) {
 				//init the BBtoInfo
 				BBtoInfo[&*Bi]->in = initFlowValues(len);
+				
+
+				//BBtoInfo[&*Bi]->out = initFlowValues(len);
 			}
 		} else {
 			//for backward Interative DataFlow Analysis, init with out[B] = initFlowValue

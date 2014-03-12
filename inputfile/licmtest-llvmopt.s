@@ -1,4 +1,4 @@
-	.file	"./inputfile/licmtest-simp.bc"
+	.file	"./inputfile/licmtest-llvmopt.bc"
 	.text
 	.globl	test1
 	.align	16, 0x90
@@ -7,21 +7,21 @@ test1:                                  # @test1
 # BB#0:                                 # %entry
 	pushl	%ebp
 	movl	%esp, %ebp
-	movl	$-100, %eax
-	movl	$-1, %ecx
-	movl	12(%ebp), %edx
-	addl	8(%ebp), %edx
-	jmp	.LBB0_1
+	pushl	%esi
+	movl	8(%ebp), %ecx
+	addl	12(%ebp), %ecx
+	movl	$-100, %esi
+	movl	$-1, %edx
 	.align	16, 0x90
-.LBB0_2:                                # %for.body
-                                        #   in Loop: Header=BB0_1 Depth=1
-	movl	%edx, %eax
 .LBB0_1:                                # %for.cond
                                         # =>This Inner Loop Header: Depth=1
-	incl	%ecx
-	cmpl	$-2, %ecx
-	jle	.LBB0_2
-# BB#3:                                 # %for.end
+	movl	%esi, %eax
+	incl	%edx
+	cmpl	$-1, %edx
+	movl	%ecx, %esi
+	jl	.LBB0_1
+# BB#2:                                 # %for.end
+	popl	%esi
 	popl	%ebp
 	ret
 .Ltmp0:
@@ -94,9 +94,9 @@ test4:                                  # @test4
 	pushl	%ebp
 	movl	%esp, %ebp
 	subl	$8000000, %esp          # imm = 0x7A1200
-	movl	12(%ebp), %ecx
+	movl	8(%ebp), %ecx
+	imull	12(%ebp), %ecx
 	xorl	%edx, %edx
-	imull	8(%ebp), %ecx
 	xorl	%eax, %eax
 	jmp	.LBB3_1
 	.align	16, 0x90
@@ -124,9 +124,9 @@ test5:                                  # @test5
 	pushl	%ebp
 	movl	%esp, %ebp
 	subl	$8000000, %esp          # imm = 0x7A1200
-	movl	12(%ebp), %eax
+	movl	8(%ebp), %eax
+	imull	12(%ebp), %eax
 	xorl	%ecx, %ecx
-	imull	8(%ebp), %eax
 	.align	16, 0x90
 .LBB4_1:                                # %do.cond
                                         # =>This Inner Loop Header: Depth=1
@@ -150,7 +150,6 @@ test6:                                  # @test6
 	movl	%esp, %ebp
 	movl	12(%ebp), %ecx
 	movl	8(%ebp), %eax
-	incl	%eax
 	.align	16, 0x90
 .LBB5_1:                                # %do.cond
                                         # =>This Inner Loop Header: Depth=1
@@ -163,6 +162,7 @@ test6:                                  # @test6
 	leal	-1(%ecx), %ecx
 	jg	.LBB5_1
 # BB#3:                                 # %do.end6
+	incl	%eax
 	popl	%ebp
 	ret
 .Ltmp5:
@@ -175,15 +175,15 @@ test7:                                  # @test7
 # BB#0:                                 # %entry
 	pushl	%ebp
 	movl	%esp, %ebp
-	movl	$-1, %ecx
 	movl	8(%ebp), %eax
 	incl	%eax
+	movl	$-1, %ecx
 	.align	16, 0x90
 .LBB6_1:                                # %for.cond
                                         # =>This Inner Loop Header: Depth=1
 	incl	%ecx
-	cmpl	$999999999, %ecx        # imm = 0x3B9AC9FF
-	jle	.LBB6_1
+	cmpl	$1000000000, %ecx       # imm = 0x3B9ACA00
+	jl	.LBB6_1
 # BB#2:                                 # %for.end
 	popl	%ebp
 	ret
@@ -198,9 +198,9 @@ test8:                                  # @test8
 	pushl	%ebp
 	movl	%esp, %ebp
 	subl	$400, %esp              # imm = 0x190
-	movl	12(%ebp), %eax
+	movl	8(%ebp), %eax
+	imull	12(%ebp), %eax
 	xorl	%ecx, %ecx
-	imull	8(%ebp), %eax
 	.align	16, 0x90
 .LBB7_1:                                # %do.cond
                                         # =>This Inner Loop Header: Depth=1
@@ -225,9 +225,9 @@ test9:                                  # @test9
 	pushl	%ebp
 	movl	%esp, %ebp
 	subl	$400, %esp              # imm = 0x190
-	movl	12(%ebp), %eax
+	movl	8(%ebp), %eax
+	imull	12(%ebp), %eax
 	xorl	%ecx, %ecx
-	imull	8(%ebp), %eax
 	.align	16, 0x90
 .LBB8_1:                                # %do.cond
                                         # =>This Inner Loop Header: Depth=1

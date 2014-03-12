@@ -21,36 +21,10 @@ entry:
 
 for.cond:                                         ; preds = %for.inc, %entry
   %i.0 = phi i32 [ 0, %entry ], [ %inc, %for.inc ]
-  %x.addr.0 = phi i32 [ %x, %entry ], [ %add23, %for.inc ]
   %cmp = icmp slt i32 %i.0, 1000000000
   br i1 %cmp, label %for.body, label %for.end
 
 for.body:                                         ; preds = %for.cond
-  %add = add nsw i32 %x.addr.0, 1
-  %add1 = add nsw i32 %add, 2
-  %sub = sub nsw i32 %add1, 3
-  %add2 = add nsw i32 %add1, %sub
-  %add3 = add nsw i32 %add, 1
-  %add4 = add nsw i32 %add3, 1
-  %add5 = add nsw i32 %add4, 1
-  %add6 = add nsw i32 %add5, 1
-  %add7 = add nsw i32 %add6, 1
-  %add8 = add nsw i32 %add7, 1
-  %add9 = add nsw i32 %add8, 1
-  %add10 = add nsw i32 %add9, 1
-  %add11 = add nsw i32 %add10, 1
-  %add12 = add nsw i32 %add1, %sub
-  %add13 = add nsw i32 %add1, %sub
-  %add14 = add nsw i32 %add1, %sub
-  %add15 = add nsw i32 %add1, %sub
-  %add16 = add nsw i32 %add1, %sub
-  %add17 = add nsw i32 %add1, %sub
-  %add18 = add nsw i32 %add1, %sub
-  %add19 = add nsw i32 %add1, %sub
-  %add20 = add nsw i32 %add1, %sub
-  %add21 = add nsw i32 %add1, %sub
-  %add22 = add nsw i32 %add1, %sub
-  %add23 = add nsw i32 %add1, %sub
   br label %for.inc
 
 for.inc:                                          ; preds = %for.body
@@ -67,9 +41,7 @@ entry:
   br label %do.body
 
 do.body:                                          ; preds = %do.cond, %entry
-  %x.0 = phi i32 [ %a, %entry ], [ %add, %do.cond ]
   %a.addr.0 = phi i32 [ %a, %entry ], [ %inc, %do.cond ]
-  %add = add nsw i32 %x.0, 1
   %inc = add nsw i32 %a.addr.0, 1
   br label %do.cond
 
