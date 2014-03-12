@@ -38,7 +38,7 @@ namespace {
 					domain.push_back(arg);
 				}
 				for (inst_iterator ii = inst_begin(F), ie = inst_end(F); ii != ie; ++ii) {
-					if (!ii->getName().empty()) {
+					if (!ii->getName().empty() && !isa<CallInst>(&*ii)) {
 						domain.push_back(&*ii);
 					}
 				}

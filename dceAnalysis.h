@@ -38,12 +38,14 @@ namespace {
 		//transfer functions
 		virtual BitVector* transferFunc(BitVector *input, BitVector *gen, BitVector *kill);
 		//generate the gen and kill set for the instructions inside a basic block
-		virtual void initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo);
-		virtual void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo);
+		virtual void initInstGenKill(Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo);
+		virtual void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo);
 		//get the boundary condition
-		virtual BitVector* getBoundaryCondition(int len, Function &F, ValueMap<Value *, unsigned> &domainToIdx);
+		virtual BitVector* getBoundaryCondition(int len, Function &F, ValueMap<FlowType, unsigned> &domainToIdx);
 		//get the initial flow values
 		virtual BitVector* initFlowValues(int len);
+
+		void initGenKill(BasicBlock *Bi, BasicBlock *Pi, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const BasicBlock *, idfaInfo *> &BBtoInfo) {};
 	};
 
 	/**
@@ -68,7 +70,7 @@ namespace {
 	}
 
 	template <class FlowType>
-	void DCEAnalysis<FlowType>::initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {
+	void DCEAnalysis<FlowType>::initInstGenKill(Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {
 		idfaInfo *instInf = InstToInfo[ii];
 		(instInf->gen)->reset(0, domainToIdx.size());
 		(instInf->kill)->reset(0, domainToIdx.size());
@@ -105,7 +107,7 @@ namespace {
 
 
 	template <class FlowType>
-	void DCEAnalysis<FlowType>::initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {
+	void DCEAnalysis<FlowType>::initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {
 		idfaInfo *instInf = InstToInfo[ii];
 		(instInf->gen)->reset(0, domainToIdx.size());
 		(instInf->kill)->reset(0, domainToIdx.size());
@@ -149,7 +151,7 @@ namespace {
 	 * get the boundary condition
 	 */
 	template <class FlowType>
-	BitVector* DCEAnalysis<FlowType>::getBoundaryCondition(int len, Function &F, ValueMap<Value *, unsigned> &domainToIdx) {
+	BitVector* DCEAnalysis<FlowType>::getBoundaryCondition(int len, Function &F, ValueMap<FlowType, unsigned> &domainToIdx) {
 		return new BitVector(len, true);
 	}
 

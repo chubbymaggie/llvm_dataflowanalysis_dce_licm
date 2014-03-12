@@ -61,6 +61,12 @@ namespace {
 				std::vector<FlowType> &domain;
 				Annotator<FlowType>(ValueMap<const BasicBlock *, idfaInfo *> &BI, ValueMap<const Instruction *, idfaInfo *> &II, std::vector<FlowType> &dm): BBtoInfo(BI), InstToInfo(II), domain(dm) {
 				}
+
+				/*
+				Annotator<FlowType>(ValueMap<const BasicBlock *, idfaInfo *> &BI, std::vector<FlowType> &dm): BBtoInfo(BI), domain(dm) {
+				}
+				*/
+
 				virtual void emitBasicBlockStartAnnot(const BasicBlock *bb, formatted_raw_ostream &os) {
 					os << "; ";
 					BitVector &bv = *(BBtoInfo[bb]->in);
@@ -85,6 +91,27 @@ namespace {
 					}
 				}
 		};
+
+	template<class FlowType>
+		class AnnotatorBB : public AssemblyAnnotationWriter {
+			public:
+				ValueMap<const BasicBlock *, idfaInfo *> &BBtoInfo;		
+				std::vector<FlowType> &domain;
+				AnnotatorBB<FlowType>(ValueMap<const BasicBlock *, idfaInfo *> &BI, std::vector<FlowType> &dm): BBtoInfo(BI), domain(dm) {
+				}
+
+				virtual void emitBasicBlockStartAnnot(const BasicBlock *bb, formatted_raw_ostream &os) {
+					os << "; ";
+					BitVector &bv = *(BBtoInfo[bb]->out);
+					for (unsigned i = 0; i < bv.size(); ++i) {
+						if (bv[i]) {
+							os << domain[i]->getName() << ", ";
+						}
+					}
+					os << "\n";
+				}
+		};
+	
 	
 	/**
 	 * Iterative DataFlow Analysis Framework
@@ -116,6 +143,11 @@ namespace {
 				//print the BitVector, for debugging....
 				void BVprint(BitVector* BV);
 
+
+				void analysisBB(std::vector<FlowType> domain, Function &F, bool isForward, BinfoMap &BBtoInfo);
+				void WorklistAlgBB(BinfoMap &BBtoInfo, ValueMap<FlowType, unsigned> &domainToIdx, bool isForward, Function &F);
+				void preorderBB(BinfoMap &BBtoInfo, std::vector<BasicBlock *> &Worklist, ValueMap<FlowType, unsigned> &domainToIdx);
+
 				/**
 				 * virtual functions for the interface of subclss
 				 */
@@ -124,13 +156,15 @@ namespace {
 				//transfer functions
 				virtual BitVector* transferFunc(BitVector *input, BitVector *gen, BitVector *kill) = 0;
 				//get the boundary condition
-				virtual BitVector* getBoundaryCondition(int len, Function &F, ValueMap<Value *, unsigned> &domainToIdx) = 0;
+				virtual BitVector* getBoundaryCondition(int len, Function &F, ValueMap<FlowType, unsigned> &domainToIdx) = 0;
 				//get the initial flow values
 				virtual BitVector* initFlowValues(int len) = 0;
 				//generate the gen and kill set for the instructions inside a basic block
-				virtual void initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, IinfoMap &InstToInfo) = 0;
+				virtual void initInstGenKill(Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, IinfoMap &InstToInfo) = 0;
 				//generate the gen and kill set for the PHINode instructions inside a basic block
-				virtual void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, IinfoMap &InstToInfo) = 0;
+				virtual void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, IinfoMap &InstToInfo) = 0;
+
+				virtual void initGenKill(BasicBlock *Bi, BasicBlock *Pi, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const BasicBlock *, idfaInfo *> &BBtoInfo) = 0;
 
 		};
 
@@ -163,6 +197,22 @@ namespace {
 		InstAnalysis(F, isForward, InstToInfo, BBtoInfo, domainToIdx);
 	}
 
+	template<class FlowType>
+	void IDFA<FlowType>::analysisBB(std::vector<FlowType> domain, Function &F, bool isForward, BinfoMap &BBtoInfo) {
+		ValueMap<FlowType, unsigned> domainToIdx;
+		for (int i = 0; i < domain.size(); ++i) {
+			domainToIdx[domain[i]] = i;
+		}
+		for (Function::iterator Bi = F.begin(), Be = F.end(); Bi != Be; ++Bi) {
+			//init the BBtoInfo
+			BBtoInfo[&*Bi] = new idfaInfo(domain.size());
+		}
+		//set the initial flow values for each block with the client defined initFlowValue function
+		setFlowValues(F, BBtoInfo, isForward, domain.size());
+		//set the Boundary Condition
+		setBoundaryCondition(F, BBtoInfo, isForward, domainToIdx);
+		WorklistAlgBB(BBtoInfo, domainToIdx, isForward, F);
+	}
 
 	/**
 	 * set the initial flowvalues 
@@ -304,10 +354,75 @@ namespace {
 			else 
 				postorder(BBtoInfo, InstToInfo, Worklist, domainToIdx);
 		}
-
-
-
 	}
+
+	/**
+	 * worklist algorithm for iterative dataflow analysis: with no instruction level, specifically for dominator analysis
+	 */
+	template<class FlowType>
+	void IDFA<FlowType>::WorklistAlgBB(BinfoMap &BBtoInfo, ValueMap<FlowType, unsigned> &domainToIdx, bool isForward, Function &F) {
+		std::vector<BasicBlock *> Worklist;
+		if (isForward) {
+			Function::iterator Bi = F.end(), Bs = F.begin();
+			while (true) {
+				-- Bi;
+				Worklist.push_back(&*Bi);
+				if (Bi == Bs) {
+					break;
+				}
+			}
+		} else {
+			for (Function::iterator Bi = F.begin(), Be = F.end(); Bi != Be; ++Bi) {
+				Worklist.push_back(&*Bi);
+			}
+		}
+		while (!Worklist.empty()) {
+			if (isForward) 
+				preorderBB(BBtoInfo, Worklist, domainToIdx);
+			else {
+				errs() << "I haven't finished this step\n";
+				//postorder(BBtoInfo, InstToInfo, Worklist, domainToIdx);
+			}
+		}
+		
+	}
+
+
+	/**
+	 * forward analysis of the basic block for the worklist algorithm 
+	 */
+	template<class FlowType>
+	void IDFA<FlowType>::preorderBB(BinfoMap &BBtoInfo, std::vector<BasicBlock *> &Worklist, ValueMap<FlowType, unsigned> &domainToIdx) {
+		BasicBlock *Bi = Worklist.back();
+		Worklist.pop_back();
+		idfaInfo *BBinf = BBtoInfo[&*Bi];
+		BitVector *oldOut = new BitVector(*(BBinf->in));
+		for (pred_iterator predIt = pred_begin(Bi), predE = pred_end(Bi); predIt != predE; ++predIt) {
+			BasicBlock *Pi = *predIt;
+			idfaInfo *Pinf = BBtoInfo[Pi];
+
+			initGenKill(Pi, Bi, domainToIdx, BBtoInfo);
+			Pinf->out = transferFunc(Pinf->in, Pinf->gen, Pinf->kill);
+
+			//errs() << "%%%%%%%%%%%%%%%%%%%%%%%%%%\n";
+			//errs() << Pi->getName() << "->" << Bi->getName() << ":";
+			//BVprint(Pinf->out);
+
+			if (predIt == pred_begin(Bi)) {
+				*(BBinf->in) = *(Pinf->out);
+			} else {
+				meetOp(BBinf->in, Pinf->out);
+			}
+		}
+		BBinf->out = transferFunc(BBinf->in, BBinf->gen, BBinf->kill);
+		if (*oldOut != *(BBinf->in)) {
+			for (succ_iterator succIt = succ_begin(Bi), succE = succ_end(Bi); succIt != succE; ++succIt) {
+				BasicBlock *BB = *succIt;
+				Worklist.push_back(BB);
+			}
+		}
+	}
+
 
 	/**
 	 * dataflow analysis for instruction level

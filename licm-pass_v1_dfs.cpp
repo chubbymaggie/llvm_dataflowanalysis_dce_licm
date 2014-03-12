@@ -1,4 +1,4 @@
-// CS380C S14 Assignment 4: licm-pass.cpp
+// CS380C S14 Assignment 4: licm.cpp
 // 
 // Based on code from Todd C. Mowry
 // Modified by Arthur Peters
@@ -25,7 +25,7 @@
 #include "llvm/Support/CFG.h"
 #include "llvm/Transforms/Scalar.h"
 
-#include "llvm/Analysis/ValueTracking.h"
+//#include "llvm/Analysis/ValueTracking.h"
 
 //#include "licmAnalysis.h"
 
@@ -47,7 +47,7 @@ namespace {
 			BasicBlock *preheader;
 			Loop *myloop;
 			LoopInfo *LI;
-			//DominatorTree *DT;
+			DominatorTree *DT;
 			bool isChanged;
 			std::vector<Value *> *LIset;
 
@@ -63,7 +63,7 @@ namespace {
 			virtual bool runOnLoop(Loop *L, LPPassManager &LPM) {
 				isChanged = false;
 				LI = &getAnalysis<LoopInfo>();
- 				//DT = &getAnalysis<DominatorTree>();
+ 				DT = &getAnalysis<DominatorTree>();
 				myloop = L;
 				preheader = L->getLoopPreheader();
 
@@ -87,6 +87,8 @@ namespace {
 					domainToIdx[domain[i]] = i;
 				}
 
+
+
 				DomAnalysis<BasicBlock *> *domAnly = new DomAnalysis<BasicBlock *>();
 				domAnly->analysisBB(domain, *F, true, BBtoInfo);
 
@@ -95,6 +97,7 @@ namespace {
 
 				//print the result....
 				
+
 
 				/*
 				std::vector<Value *> domain;
@@ -114,12 +117,12 @@ namespace {
 
 
 				//replace isLoopInvariant with the ReachDef definition.........................
-				/*
 				if (preheader)
 					putAboveHandler(DT->getNode(L->getHeader()));
-				*/
+				/*
 				genLIset(L);
 				modifyLI();
+				*/
 
 				return isChanged;
 			}
@@ -163,7 +166,6 @@ namespace {
 					for (std::vector<Value *>::iterator it = LIset->begin(); it != LIset->end(); ) {
 						Value *val = *it;
 						if (Instruction *Inst = dyn_cast<Instruction>(val)) {
-							//if (isLoopInvariantOprInloop(Inst) && (isSafeToSpeculativelyExecute(Inst) || dominateExits(Inst) && dominateUses(Inst)) && isSafeInst(Inst)) {
 							if (isLoopInvariantOprInloop(Inst) && dominateExits(Inst) && dominateUses(Inst) && isSafeInst(Inst)) {
 								putAboveInst(Inst);
 								//how to erase the elements from the vector with iterator...
@@ -186,7 +188,7 @@ namespace {
 				for (Value::use_iterator UI = I->use_begin(), UE = I->use_end(); UI != UE; ++UI) {
 					if (Instruction *useI = dyn_cast<Instruction>(*UI)) {
 						//if (!(DT->dominates(I, useI))) {
-						if (!((*(BBtoInfo[useI->getParent()]->out))[domainToIdx[I->getParent()]])) {
+						if (!(DT->dominates(I, useI))) {
 							return false;
 						}
 					}
@@ -235,7 +237,6 @@ namespace {
 						Instruction *I = II++;
 						//constant folding the instruction????....TO DO....
 						//if (isLoopInvariantOprInloop(&I) && isSafePutAboveInst(I) && safeToMove(I)) {
-						//if (isLoopInvariantOprInloop(I) && (isSafeToSpeculativelyExecute(I) || dominateExits(I) && dominateUses(I) )&& isSafeInst(I)) {
 						if (isLoopInvariantOprInloop(I) && dominateExits(I) && dominateUses(I) && isSafeInst(I)) {
 						//if (isLoopInvariantOprInloop(&I) && safeToMove(I)) {}
 							//errs() << "to be moved into the preheader\n";
@@ -254,7 +255,6 @@ namespace {
 			 * the computation is loop invariant, plus its operands have all be moved outside the loop
 			 */
 			bool isLoopInvariantOperands(Instruction *I) {
-				
 				for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i) {
 					if (!isLI(I->getOperand(i)) && std::find(LIset->begin(), LIset->end(), I->getOperand(i)) == LIset->end() )
 						return false;
@@ -295,7 +295,7 @@ namespace {
 				myloop->getExitBlocks(ExitBlocks);
 				for (unsigned i = 0, e = ExitBlocks.size(); i != e; ++i) {
 					//if (!DT->dominates(I->getParent(), ExitBlocks[i]))
-					if (!((*(BBtoInfo[ExitBlocks[i]]->out))[domainToIdx[I->getParent()]]))
+					if (!DT->dominates(I->getParent(), ExitBlocks[i]))
 						return false;
 				}
 				if (ExitBlocks.empty())
