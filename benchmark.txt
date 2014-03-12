@@ -16,13 +16,13 @@ Unoptimized (with clang)
 11.230000 seconds
 My DCE optimized (with clang)
 7.420000 seconds
-LLVM LICM optimized (with clang)
+LLVM DCE optimized (with clang)
 11.060000 seconds
 Unoptimized (with gcc)
 1.630000 seconds
 My DCE optimized (with gcc)
 1.300000 seconds
-LLVM LICM optimized (with gcc)
+LLVM DCE optimized (with gcc)
 1.620000 seconds
 
 So after dead code elimination, the performance has been improved a lot.
