@@ -222,7 +222,7 @@ namespace {
 
 				//to make it safe, here enumerate all possible IR instructions
 				//!isa<StoreInst>(I)?
-				if (!isa<CmpInst>(I) && !isa<BinaryOperator>(I) && !isa<GetElementPtrInst>(I) && !isa<InsertElementInst>(I) && !isa<CastInst>(I) && !isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I) && !isa<ExtractElementInst>(I) && !isa<SelectInst>(I) && !isa<ShuffleVectorInst>(I))
+				if (!isa<CmpInst>(I) && !isa<BinaryOperator>(I) && !isa<GetElementPtrInst>(I) && !isa<CastInst>(I) && !isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I) && !isa<SelectInst>(I) )
 					return false;	
 				//alternative version:
 				//if (I->getName().empty())
@@ -235,20 +235,20 @@ namespace {
 			/* 
 			 * depth-first order traverse on the dominatorTree, for testing
 			 */
-			void putAboveHandler(DomTreeNode *N) {
-				BasicBlock *BB = N->getBlock();
+			void putAboveHandler(DomTreeNode *Node) {
+				BasicBlock *BB = Node->getBlock();
 				//BB should be the immediately withnin L
 				if (!myloop->contains(BB)) return;
 				if (!(LI->getLoopFor(BB) != myloop)) {
-					for (BasicBlock::iterator II = BB->begin(), E = BB->end(); II != E; ) {
-						Instruction *I = II++;
+					for (BasicBlock::iterator ii = BB->begin(), ie = BB->end(); ii != ie; ) {
+						Instruction *I = ii++;
 						//if (isLoopInvariantOprInloop(I) && (isSafeToSpeculativelyExecute(I) || dominateExits(I) && dominateUses(I) )&& isSafeInst(I)) {
 						if (isLoopInvariantOprInloop(I) && dominateExits(I) && dominateUses(I) && isSafeInst(I)) {
 							putAboveInst(I);
 						}
 					}
 				}
-				const std::vector<DomTreeNode*> &DTchild = N->getChildren();
+				const std::vector<DomTreeNode*> &DTchild = Node->getChildren();
 				for (unsigned i = 0, e = DTchild.size(); i != e; ++i) {
 					putAboveHandler(DTchild[i]);
 				}	
