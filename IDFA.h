@@ -5,6 +5,8 @@
 // Modified by Jianyu Huang(UT EID: jh57266)
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef IDFA_H
+#define IDFA_H
 
 #include "llvm/Pass.h"
 #include "llvm/PassManager.h"
@@ -501,3 +503,5 @@ namespace {
 		}
 
 }
+
+#endif

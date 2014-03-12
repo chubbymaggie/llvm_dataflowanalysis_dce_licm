@@ -31,7 +31,6 @@ llc $1-opt.bc -o $1-opt.s
 gcc $1-opt.s -O0 -o $1-opt.native
 ./$1-opt.native
 
-
 echo "LLVM LICM optimized (with gcc)"
 llc $1-llvmopt.bc -o $1-llvmopt.s
 gcc $1-llvmopt.s -O0 -o $1-llvmopt.native

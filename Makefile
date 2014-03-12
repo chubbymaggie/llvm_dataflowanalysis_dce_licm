@@ -5,7 +5,7 @@ CXXFLAGS = -rdynamic $(shell llvm-config --cxxflags) -g -O0
 %.so: %.o 
 	$(CXX) -dylib -flat_namespace -shared $^ -o $@
 
-licm-pass.o: licm-pass.cpp
+licm-pass.o: licm-pass.cpp domAnalysis.h IDFA.h
 
 dce-pass.o: dce-pass.cpp IDFA.h dceAnalysis.h
 

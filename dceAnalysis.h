@@ -5,6 +5,8 @@
 // Modified by Jianyu Huang (UT EID: jh57266)
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef DCEANALYSIS_H
+#define DCEANALYSIS_H
 
 #include "llvm/Pass.h"
 #include "llvm/PassManager.h"
@@ -39,12 +41,13 @@ namespace {
 		virtual BitVector* transferFunc(BitVector *input, BitVector *gen, BitVector *kill);
 		//generate the gen and kill set for the instructions inside a basic block
 		virtual void initInstGenKill(Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo);
+		//generate the gen and kill set for the PHINode instructions inside a basic block
 		virtual void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo);
 		//get the boundary condition
 		virtual BitVector* getBoundaryCondition(int len, Function &F, ValueMap<FlowType, unsigned> &domainToIdx);
 		//get the initial flow values
 		virtual BitVector* initFlowValues(int len);
-
+		//generate the gen and kill set for each block
 		void initGenKill(BasicBlock *Bi, BasicBlock *Pi, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const BasicBlock *, idfaInfo *> &BBtoInfo) {};
 	};
 
@@ -105,7 +108,6 @@ namespace {
 		}
 	}
 
-
 	template <class FlowType>
 	void DCEAnalysis<FlowType>::initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {
 		idfaInfo *instInf = InstToInfo[ii];
@@ -130,7 +132,7 @@ namespace {
 				}
 			}
 		} else {
-			errs() << "the phinode instrution is not in the domain!\n";
+			//the phinode instrution is not in the domain!
 			User::op_iterator OI, OE;
 			for (OI = ii->op_begin(), OE = ii->op_end(); OI != OE; ++OI) {
 				Value *val2 = *OI;
@@ -143,9 +145,6 @@ namespace {
 
 		}
 	}
-
-
-
 
 	/**
 	 * get the boundary condition
@@ -163,3 +162,5 @@ namespace {
 		return new BitVector(len, true);
 	}
 }
+
+#endif

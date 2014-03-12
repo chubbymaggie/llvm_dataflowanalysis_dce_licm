@@ -25,10 +25,13 @@
 #include "llvm/Support/CFG.h"
 #include "llvm/Transforms/Scalar.h"
 
-//#include "llvm/Analysis/ValueTracking.h"
+#include "llvm/Analysis/ValueTracking.h"
+
 //#include "licmAnalysis.h"
+
+
 #include "domAnalysis.h"
-#include "reachAnalysis.h"
+//#include "reachAnalysis.h"
 
 #include <ostream>
 #include <fstream>
@@ -51,10 +54,7 @@ namespace {
 			std::vector<BasicBlock *> domain;
 			ValueMap<BasicBlock *, unsigned> domainToIdx;
 			ValueMap<const BasicBlock *, idfaInfo *> BBtoInfo;		
-			std::vector<Value *> reachdomain;
-			ValueMap<const BasicBlock *, idfaInfo *> reachBBtoInfo;		
-			ValueMap<const Instruction *, idfaInfo *> reachInstToInfo;
-				
+
 			LICM() : LoopPass(ID) {
 				initializeLICMPass(*PassRegistry::getPassRegistry());
 			}
@@ -67,78 +67,85 @@ namespace {
 				myloop = L;
 				preheader = L->getLoopPreheader();
 
-				Function *F = preheader->getParent();
-				//generating dominator tree by data flow analysis(Dominator Analysis)
-				genDominatorTree(F);
-				//AnnotatorBB<BasicBlock *> annot(BBtoInfo, domain);
-				//F->print(errs(), &annot);
-				
-				//reach definition
-				//genReachDef(F);
-
 				/*
-				if (preheader)
-					putAboveHandler(DT->getNode(L->getHeader()));
+				errs() << *preheader << "\n";
+				errs() << *(L->getHeader()) << "\n";
+				errs() << "Exit\n";
+				SmallVector<BasicBlock*, 8> ExitBlocks;
+				myloop->getExitBlocks(ExitBlocks);
+
+				for (unsigned i = 0, e = ExitBlocks.size(); i != e; ++i) {
+					errs() << *ExitBlocks[i] << "\n";
+				}
 				*/
-				//generate the Loop Invariant Set
-				genLoopInvariantSet(L);
 
-				//move the loop invariant instructions to the preheader as long as it satisifies four conditions
-				//1. The computation is loop invariant: isLoopInvariantOprInloop(Instruction *) and in LIset
-				//2. The candidate is in a basic block that dominates all exits of the loop: dominateExits(Instruction *)
-				//3. The variable x is not assigned to elsewhere in the loop: by the definition of SSA form, this has already been guranteed
-				//4. The candidate is in a block that dominates all uses of variable x: dominateUses(Instruction *)
-				modifyLoopInvariantIR();
-
-				return isChanged;
-			}
-
-			/*
-			 * generate the dominator tree (Dominator Analysis)
-			 */
-			void genDominatorTree(Function *F) {
+				Function *F = preheader->getParent();
 				for (Function::iterator Bi = F->begin(), Be = F->end(); Bi != Be; ++Bi) {
 					domain.push_back(&*Bi);
 				}
 				for (int i = 0; i < domain.size(); ++i) {
 					domainToIdx[domain[i]] = i;
 				}
+
 				DomAnalysis<BasicBlock *> *domAnly = new DomAnalysis<BasicBlock *>();
 				domAnly->analysisBB(domain, *F, true, BBtoInfo);
-			}
 
-			/*
-			 * generate the reaching definition
-			 */
-			void genReachDef(Function *F) {
+				AnnotatorBB<BasicBlock *> annot(BBtoInfo, domain);
+				F->print(errs(), &annot);
+
+				//print the result....
+				
+
+				/*
+				std::vector<Value *> domain;
 				for (Function::arg_iterator arg = F->arg_begin(); arg != F->arg_end(); ++arg) {
-					reachdomain.push_back(arg);
+					domain.push_back(arg);
 				}
 				for (inst_iterator ii = inst_begin(F), ie = inst_end(F); ii != ie; ++ii) {
 					if (!ii->getName().empty()) {
-						reachdomain.push_back(&*ii);
+						domain.push_back(&*ii);
 					}
 				}
+				ValueMap<const BasicBlock *, idfaInfo *> BBtoInfo;		
+				ValueMap<const Instruction *, idfaInfo *> InstToInfo;
 				ReachAnalysis<llvm::Value *> *reachAnly = new ReachAnalysis<llvm::Value *>();
-				reachAnly->analysis(reachdomain, *F, true, reachBBtoInfo, reachInstToInfo);
+				reachAnly->analysis(domain, *F, true, BBtoInfo, InstToInfo);
+				*/
+
+
+				//replace isLoopInvariant with the ReachDef definition.........................
+				/*
+				if (preheader)
+					putAboveHandler(DT->getNode(L->getHeader()));
+				*/
+				genLIset(L);
+				modifyLI();
+
+				return isChanged;
 			}
 
 			/*
 			 * generate the Loop Invariant Set
 			 */
-			void genLoopInvariantSet(Loop *L) {
+			void genLIset(Loop *L) {
 				LIset = new std::vector<Value *>(); 
 				bool setChanged = true;
 				while(setChanged) {
 					setChanged = false;
 					for (unsigned i = 0, e = L->getBlocks().size(); i != e; ++i) {
 						BasicBlock *BB = L->getBlocks()[i];
+
 						if (!myloop->contains(BB)) continue;
 						if (LI->getLoopFor(BB) != myloop) continue;
 						for (BasicBlock::iterator II = BB->begin(), E = BB->end(); II != E; ++II) {
-							//we cannot move PHINode into preheader
+							//	Value *V = I->getOperand(i);
+
+							//Phi...Node we cannot move it into preheader
+							//if (isLoopInvariantOperands(II) && (LIset->find(II) == LIset->end()) && isSafeInst(II)) {
+							//Notice......II cannot be a argument....
 							if (isLoopInvariantOperands(II) && std::find(LIset->begin(), LIset->end(), II) == LIset->end() && isSafeInst(II)) {
 								LIset->push_back(II);
+								//errs() << *II << "\n";
 								setChanged = true;
 							}
 						}
@@ -148,12 +155,8 @@ namespace {
 
 			/* 
 			 * move the loop invariant instructions to the preheader as long as it satisifies four conditions
-			 * 1. The computation is loop invariant: isLoopInvariantOprInloop(Instruction *) and in LIset
-			 * 2. The candidate is in a basic block that dominates all exits of the loop: dominateExits(Instruction *)
-			 * 3. The variable x is not assigned to elsewhere in the loop: by the definition of SSA form, this has already been guranteed
-			 * 4. The candidate is in a block that dominates all uses of variable x: dominateUses(Instruction *)
 			 */
-			void modifyLoopInvariantIR() {
+			void modifyLI() {
 				bool hoistChanged = true;
 				while (hoistChanged) {
 					hoistChanged = false;
@@ -163,6 +166,7 @@ namespace {
 							//if (isLoopInvariantOprInloop(Inst) && (isSafeToSpeculativelyExecute(Inst) || dominateExits(Inst) && dominateUses(Inst)) && isSafeInst(Inst)) {
 							if (isLoopInvariantOprInloop(Inst) && dominateExits(Inst) && dominateUses(Inst) && isSafeInst(Inst)) {
 								putAboveInst(Inst);
+								//how to erase the elements from the vector with iterator...
 								it = LIset->erase(it);
 								hoistChanged = true;
 							} else {
@@ -174,7 +178,6 @@ namespace {
 					}
 				}
 			}
-
 
 			/*
 			 * The candidate is in a block that dominates all uses of variable x.
@@ -191,26 +194,6 @@ namespace {
 				return true;	
 			}
 
-			/* 
-			 * The candidate is in a basic block that dominates all exits of the loop
-			 */
-			bool dominateExits(Instruction *I) {
-				if (I->getParent() == myloop->getHeader()) {
-					return true;
-				}
-				SmallVector<BasicBlock*, 8> ExitBB;
-				myloop->getExitBlocks(ExitBB);
-				for (unsigned i = 0, e = ExitBB.size(); i != e; ++i) {
-					//if (!DT->dominates(I->getParent(), ExitBB[i]))
-					if (!((*(BBtoInfo[ExitBB[i]]->out))[domainToIdx[I->getParent()]]))
-						return false;
-				}
-				if (ExitBB.empty())
-					return false;
-				return true;
-			}			
-
-
 			/*
 			 * the instruction that is safe to move outside of the loop.
 			 */
@@ -219,21 +202,29 @@ namespace {
 				if (isa<PHINode>(I)) {
 					return false;
 				}	
-
-				//to make it safe, here enumerate all possible IR instructions
-				//!isa<StoreInst>(I)?
-				if (!isa<CmpInst>(I) && !isa<BinaryOperator>(I) && !isa<GetElementPtrInst>(I) && !isa<InsertElementInst>(I) && !isa<CastInst>(I) && !isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I) && !isa<ExtractElementInst>(I) && !isa<SelectInst>(I) && !isa<ShuffleVectorInst>(I))
-					return false;	
-				//alternative version:
-				//if (I->getName().empty())
-				//  return false;
-
+				//if (!isa<StoreInst>(I) && !isa<BinaryOperator>(I) && !isa<CastInst>(I) && !isa<SelectInst>(I) && !isa<GetElementPtrInst>(I) &&
+				if (!isa<BinaryOperator>(I) && !isa<CastInst>(I) && !isa<SelectInst>(I) && !isa<GetElementPtrInst>(I) &&
+						!isa<CmpInst>(I) && !isa<InsertElementInst>(I) && !isa<ExtractElementInst>(I) && !isa<ShuffleVectorInst>(I) &&
+						!isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I))
+					return false;
+			
 				return true;
 			}
 
+			/* to delete
+			bool isSafePutAboveInst(Instruction  &I) {
+			//if( !isa<BasicBlock>(&**op_it)
+				if (!isa<BinaryOperator>(I) && !isa<CastInst>(I) && !isa<SelectInst>(I) && !isa<GetElementPtrInst>(I) &&
+						!isa<CmpInst>(I) && !isa<InsertElementInst>(I) && !isa<ExtractElementInst>(I) && !isa<ShuffleVectorInst>(I) &&
+						!isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I))
+					return false;
+				return safeToMove(I);
+			}
+			*/
+
 
 			/* 
-			 * depth-first order traverse on the dominatorTree, for testing
+			 * depth-first order traverse on the dominatorTree
 			 */
 			void putAboveHandler(DomTreeNode *N) {
 				BasicBlock *BB = N->getBlock();
@@ -242,15 +233,20 @@ namespace {
 				if (!(LI->getLoopFor(BB) != myloop)) {
 					for (BasicBlock::iterator II = BB->begin(), E = BB->end(); II != E; ) {
 						Instruction *I = II++;
+						//constant folding the instruction????....TO DO....
+						//if (isLoopInvariantOprInloop(&I) && isSafePutAboveInst(I) && safeToMove(I)) {
 						//if (isLoopInvariantOprInloop(I) && (isSafeToSpeculativelyExecute(I) || dominateExits(I) && dominateUses(I) )&& isSafeInst(I)) {
 						if (isLoopInvariantOprInloop(I) && dominateExits(I) && dominateUses(I) && isSafeInst(I)) {
+						//if (isLoopInvariantOprInloop(&I) && safeToMove(I)) {}
+							//errs() << "to be moved into the preheader\n";
+							//errs() << I << "\n";
 							putAboveInst(I);
 						}
 					}
 				}
-				const std::vector<DomTreeNode*> &DTchild = N->getChildren();
-				for (unsigned i = 0, e = DTchild.size(); i != e; ++i) {
-					putAboveHandler(DTchild[i]);
+				const std::vector<DomTreeNode*> &Children = N->getChildren();
+				for (unsigned i = 0, e = Children.size(); i != e; ++i) {
+					putAboveHandler(Children[i]);
 				}	
 			}
 
@@ -258,6 +254,7 @@ namespace {
 			 * the computation is loop invariant, plus its operands have all be moved outside the loop
 			 */
 			bool isLoopInvariantOperands(Instruction *I) {
+				
 				for (unsigned i = 0, e = I->getNumOperands(); i != e; ++i) {
 					if (!isLI(I->getOperand(i)) && std::find(LIset->begin(), LIset->end(), I->getOperand(i)) == LIset->end() )
 						return false;
@@ -276,6 +273,7 @@ namespace {
 				return true;
 			}
 
+			//we might need to change it to the "reach def" style...
 			/*
 			 * the instrution is outside the loop or not
 			 */
@@ -286,6 +284,64 @@ namespace {
 				return true;
 			}
 
+			/* 
+			 * The candidate is in a basic block that dominates all uses of variable x
+			 */
+			bool dominateExits(Instruction *I) {
+				if (I->getParent() == myloop->getHeader()) {
+					return true;
+				}
+				SmallVector<BasicBlock*, 8> ExitBlocks;
+				myloop->getExitBlocks(ExitBlocks);
+				for (unsigned i = 0, e = ExitBlocks.size(); i != e; ++i) {
+					//if (!DT->dominates(I->getParent(), ExitBlocks[i]))
+					if (!((*(BBtoInfo[ExitBlocks[i]]->out))[domainToIdx[I->getParent()]]))
+						return false;
+				}
+				if (ExitBlocks.empty())
+					return false;
+				return true;
+			}
+
+			
+			/* to delete...
+			bool safeToMove(Instruction &Inst) {
+				if (isSafeToSpeculativelyExecute(&Inst)) {
+					errs() << "isSafeToSpeculatively\n";
+					errs() << Inst << "\n";
+					return true;
+				}
+	
+				if (Inst.getParent() == myloop->getHeader()) {
+					//errs() << "getHeader...\n";
+					//errs() << Inst << "\n";
+					return true;
+				}
+
+				SmallVector<BasicBlock*, 8> ExitBlocks;
+				myloop->getExitBlocks(ExitBlocks);
+				for (unsigned i = 0, e = ExitBlocks.size(); i != e; ++i) {
+					if (!DT->dominates(Inst.getParent(), ExitBlocks[i]))
+						return false;
+				}
+
+				if (ExitBlocks.empty())
+					return false;
+
+				return true;
+			}
+			*/
+
+			/* to delete...
+			bool isSafePutAboveInst(Instruction  &I) {
+				if (!isa<BinaryOperator>(I) && !isa<CastInst>(I) && !isa<SelectInst>(I) && !isa<GetElementPtrInst>(I) &&
+						!isa<CmpInst>(I) && !isa<InsertElementInst>(I) && !isa<ExtractElementInst>(I) && !isa<ShuffleVectorInst>(I) &&
+						!isa<ExtractValueInst>(I) && !isa<InsertValueInst>(I))
+					return false;
+				return safeToMove(I);
+			}
+			*/
+
 			void putAboveInst(Instruction *I) {
 				I->moveBefore(preheader->getTerminator());
 				isChanged = true;
@@ -295,7 +351,7 @@ namespace {
 			virtual void getAnalysisUsage(AnalysisUsage &AU) const {
 				AU.setPreservesCFG();
 				AU.addRequired<LoopInfo>();
-				//AU.addRequired<DominatorTree>();
+				AU.addRequired<DominatorTree>();
 			}
 
 	};

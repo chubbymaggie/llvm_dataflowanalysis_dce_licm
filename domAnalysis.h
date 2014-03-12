@@ -5,6 +5,8 @@
 // Modified by Jianyu Huang (UT EID: jh57266)
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef DOMANALYSIS_H
+#define DOMANALYSIS_H
 
 #include "llvm/Pass.h"
 #include "llvm/PassManager.h"
@@ -34,21 +36,21 @@ namespace {
 			public:
 				DomAnalysis() : IDFA<FlowType>() {}
 
+
 				//meet operator
 				void meetOp(BitVector *op1, BitVector *op2);
 				//transfer functions
 				BitVector* transferFunc(BitVector *input, BitVector *gen, BitVector *kill);
 				//generate the gen and kill set for the instructions inside a basic block
 				void initInstGenKill(Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo) {};
+				//generate the gen and kill set for the PHINode instructions inside a basic block
+				void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, IinfoMap &InstToInfo) {};
 				//generate the gen and kill set for each block
 				void initGenKill(BasicBlock *Bi, BasicBlock *Pi, ValueMap<FlowType, unsigned> &domainToIdx, ValueMap<const BasicBlock *, idfaInfo *> &BBtoInfo);
 				//get the boundary condition
 				BitVector* getBoundaryCondition(int len, Function &F, ValueMap<FlowType, unsigned> &domainToIdx);
 				//get the initial flow values
 				BitVector* initFlowValues(int len);
-
-				void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, IinfoMap &InstToInfo) {};
-
 		};
 
 	/**
@@ -110,3 +112,5 @@ namespace {
 	}
 
 }
+
+#endif

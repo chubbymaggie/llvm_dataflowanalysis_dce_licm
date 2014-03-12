@@ -44,7 +44,6 @@ namespace {
 				}
 				ValueMap<const BasicBlock *, idfaInfo *> *BBtoInfo = new ValueMap<const BasicBlock *, idfaInfo *>();		
 				ValueMap<const Instruction *, idfaInfo *> *InstToInfo = new ValueMap<const Instruction *, idfaInfo *>();
-
 				DCEAnalysis<llvm::Value *> *dceAnly = new DCEAnalysis<llvm::Value *>();
 				dceAnly->analysis(domain, F, false, *BBtoInfo, *InstToInfo);
 
@@ -62,6 +61,7 @@ namespace {
 				return isChanged;
 			}
 
+			// erase the dead code in IR
 			bool eraseDCE(std::vector<Value *> domain, BitVector &bv) {
 				isChanged = false;
 				for (int i = (bv.size()) - 1; i >= 0; --i) {

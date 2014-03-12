@@ -1,10 +1,12 @@
-// CS380C S14 Assignment 3: reach.h
+// CS380C S14 Assignment 4: reachAnalysis.h
 // 
 // Based on code from Todd C. Mowry
 // Modified by Arthur Peters
 // Modified by Jianyu Huang (UT EID: jh57266)
 ////////////////////////////////////////////////////////////////////////////////
 
+#ifndef REACHANALYSIS_H
+#define REACHANALYSIS_H
 
 #include "llvm/Pass.h"
 #include "llvm/PassManager.h"
@@ -40,6 +42,9 @@ namespace {
 				BitVector* transferFunc(BitVector *input, BitVector *gen, BitVector *kill);
 				//generate the gen and kill set for the instructions inside a basic block
 				void initInstGenKill(Instruction *ii, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const Instruction *, idfaInfo *> &InstToInfo);
+				//generate the gen and kill set for the PHINode instructions inside a basic block
+				void initPHIGenKill(BasicBlock *BB, Instruction *ii, ValueMap<FlowType, unsigned> &domainToIdx, IinfoMap &InstToInfo) {};
+	
 				//generate the gen and kill set for each block
 				void initGenKill(BasicBlock *Bi, BasicBlock *Pi, ValueMap<Value *, unsigned> &domainToIdx, ValueMap<const BasicBlock *, idfaInfo *> &BBtoInfo);
 				//get the boundary condition
@@ -125,5 +130,6 @@ namespace {
 	BitVector* ReachAnalysis<FlowType>::initFlowValues(int len) {
 		return new BitVector(len, false);
 	}
-
 }
+
+#endif
