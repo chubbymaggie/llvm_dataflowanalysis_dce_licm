@@ -7,10 +7,6 @@ target triple = "i386-pc-linux-gnu"
 ; Function Attrs: nounwind
 define void @test(i32 %x) #0 {
 entry:
-  %add = add nsw i32 %x, 1
-  %add1 = add nsw i32 %add, 2
-  %sub = sub nsw i32 %add1, 3
-  %add2 = add nsw i32 %add1, %sub
   ret void
 }
 
@@ -40,12 +36,10 @@ entry:
 
 for.cond:                                         ; preds = %for.inc, %entry
   %i.0 = phi i32 [ 0, %entry ], [ %inc, %for.inc ]
-  %x.0 = phi i32 [ %a, %entry ], [ %add, %for.inc ]
   %cmp = icmp slt i32 %i.0, %b
   br i1 %cmp, label %for.body, label %for.end
 
 for.body:                                         ; preds = %for.cond
-  %add = add nsw i32 %x.0, 1
   br label %for.inc
 
 for.inc:                                          ; preds = %for.body
@@ -59,15 +53,13 @@ for.end:                                          ; preds = %for.cond
 ; Function Attrs: nounwind
 define void @test021(i32 %a, i32 %b) #0 {
 entry:
-  %cmp = icmp sgt i32 %b, 0
   br label %do.body
 
 do.body:                                          ; preds = %do.cond, %entry
-  %x.0 = phi i32 [ %a, %entry ], [ %add, %do.cond ]
-  %add = add nsw i32 %x.0, 1
   br label %do.cond
 
 do.cond:                                          ; preds = %do.body
+  %cmp = icmp sgt i32 %b, 0
   br i1 %cmp, label %do.body, label %do.end
 
 do.end:                                           ; preds = %do.cond
@@ -204,12 +196,12 @@ while.end:                                        ; preds = %while.cond
 define i32 @hc11(i32 %a, i32 %b) #0 {
 entry:
   %M = alloca [100 x i32], align 4
-  %mul = mul nsw i32 %a, %b
   br label %do.body
 
 do.body:                                          ; preds = %do.cond, %entry
   %i.0 = phi i32 [ 0, %entry ], [ %inc, %do.cond ]
   %inc = add nsw i32 %i.0, 1
+  %mul = mul nsw i32 %a, %b
   %arrayidx = getelementptr inbounds [100 x i32]* %M, i32 0, i32 %inc
   store i32 %mul, i32* %arrayidx, align 4
   br label %do.cond
@@ -248,25 +240,25 @@ for.end:                                          ; preds = %for.cond
 ; Function Attrs: nounwind
 define i32 @test024(i32 %a, i32 %b) #0 {
 entry:
-  %add = add nsw i32 %a, 1
-  %cmp = icmp sgt i32 %b, 0
-  %sub = sub nsw i32 %b, 1
-  %cmp3 = icmp sgt i32 %sub, 0
   br label %do.body
 
 do.body:                                          ; preds = %do.cond2, %entry
   br label %do.body1
 
 do.body1:                                         ; preds = %do.cond, %do.body
+  %add = add nsw i32 %a, 1
   br label %do.cond
 
 do.cond:                                          ; preds = %do.body1
+  %cmp = icmp sgt i32 %b, 0
   br i1 %cmp, label %do.body1, label %do.end
 
 do.end:                                           ; preds = %do.cond
   br label %do.cond2
 
 do.cond2:                                         ; preds = %do.end
+  %sub = sub nsw i32 %b, 1
+  %cmp3 = icmp sgt i32 %sub, 0
   br i1 %cmp3, label %do.body, label %do.end4
 
 do.end4:                                          ; preds = %do.cond2
@@ -286,8 +278,6 @@ for.cond:                                         ; preds = %for.inc, %entry
 
 for.body:                                         ; preds = %for.cond
   %add = add nsw i32 %x, 1
-  %add1 = add nsw i32 %x, 2
-  %add2 = add nsw i32 %add, %add1
   br label %for.inc
 
 for.inc:                                          ; preds = %for.body
@@ -330,27 +320,24 @@ do.end:                                           ; preds = %do.cond
 ; Function Attrs: nounwind
 define void @test028(i32 %a, i32 %b) #0 {
 entry:
-  %cmp = icmp sgt i32 %b, 0
-  %sub = sub nsw i32 %b, 1
-  %cmp3 = icmp sgt i32 %sub, 0
   br label %do.body
 
 do.body:                                          ; preds = %do.cond2, %entry
-  %x.0 = phi i32 [ %a, %entry ], [ %add, %do.cond2 ]
   br label %do.body1
 
 do.body1:                                         ; preds = %do.cond, %do.body
-  %x.1 = phi i32 [ %x.0, %do.body ], [ %add, %do.cond ]
-  %add = add nsw i32 %x.1, 1
   br label %do.cond
 
 do.cond:                                          ; preds = %do.body1
+  %cmp = icmp sgt i32 %b, 0
   br i1 %cmp, label %do.body1, label %do.end
 
 do.end:                                           ; preds = %do.cond
   br label %do.cond2
 
 do.cond2:                                         ; preds = %do.end
+  %sub = sub nsw i32 %b, 1
+  %cmp3 = icmp sgt i32 %sub, 0
   br i1 %cmp3, label %do.body, label %do.end4
 
 do.end4:                                          ; preds = %do.cond2
@@ -360,14 +347,14 @@ do.end4:                                          ; preds = %do.cond2
 ; Function Attrs: nounwind
 define i32 @stdloop0(i32 %x, i32 %y) #0 {
 entry:
-  %add = add nsw i32 %x, 1
-  %cmp = icmp sgt i32 %y, 0
   br label %do.body
 
 do.body:                                          ; preds = %do.cond, %entry
+  %add = add nsw i32 %x, 1
   br label %do.cond
 
 do.cond:                                          ; preds = %do.body
+  %cmp = icmp sgt i32 %y, 0
   br i1 %cmp, label %do.body, label %do.end
 
 do.end:                                           ; preds = %do.cond
@@ -379,13 +366,13 @@ define i32 @hc16(i32 %a, i32 %b) #0 {
 entry:
   %M = alloca [100 x i32], align 4
   %arrayidx = getelementptr inbounds [100 x i32]* %M, i32 0, i32 0
-  %mul = mul nsw i32 %a, %b
   br label %do.body
 
 do.body:                                          ; preds = %do.cond, %entry
   %p.0 = phi i32* [ %arrayidx, %entry ], [ %incdec.ptr, %do.cond ]
   %i.0 = phi i32 [ 0, %entry ], [ %inc, %do.cond ]
   %inc = add nsw i32 %i.0, 1
+  %mul = mul nsw i32 %a, %b
   %arrayidx1 = getelementptr inbounds i32* %p.0, i32 %inc
   store i32 %mul, i32* %arrayidx1, align 4
   %incdec.ptr = getelementptr inbounds i32* %p.0, i32 1
@@ -405,15 +392,15 @@ do.end:                                           ; preds = %do.cond
 define i32 @hc161(i32 %a, i32 %b) #0 {
 entry:
   %M = alloca [100 x i32], align 4
-  %mul = mul nsw i32 %a, %b
-  %arrayidx1 = getelementptr inbounds [100 x i32]* %M, i32 0, i32 0
   br label %do.body
 
 do.body:                                          ; preds = %do.cond, %entry
   %i.0 = phi i32 [ 0, %entry ], [ %inc, %do.cond ]
   %inc = add nsw i32 %i.0, 1
+  %mul = mul nsw i32 %a, %b
   %arrayidx = getelementptr inbounds [100 x i32]* %M, i32 0, i32 %inc
   store i32 %mul, i32* %arrayidx, align 4
+  %arrayidx1 = getelementptr inbounds [100 x i32]* %M, i32 0, i32 0
   store i32 0, i32* %arrayidx1, align 4
   br label %do.cond
 

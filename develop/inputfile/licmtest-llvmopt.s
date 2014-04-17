@@ -1,4 +1,4 @@
-	.file	"./inputfile/licmtest-llvmopt.bc"
+	.file	"inputfile/licmtest-llvmopt.bc"
 	.text
 	.globl	test1
 	.align	16, 0x90
