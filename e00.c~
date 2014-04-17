@@ -1,7 +1,0 @@
-int stdloop(int a, int b) {
-	int i, x;
-	for (i = 0; i < -1; i++) {
-		x = a + b;
-	}
-	return x;
-}
